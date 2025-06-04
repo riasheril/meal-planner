@@ -10,6 +10,8 @@ router.get('/filter', recipeController.filter);
 router.get('/:id', recipeController.getById);
 // Create a new recipe
 router.post('/', recipeController.create);
+// Seed a random recipe
+router.post('/seed-random', recipeController.seedRandom);
 // Update a recipe
 router.put('/:id', recipeController.update);
 // Delete a recipe

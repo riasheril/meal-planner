@@ -1,4 +1,4 @@
-const recipeService = require('@services/recipeService');
+const recipeService = require('../services/recipeService');
 
 exports.list = async (req, res) => {
   try {
@@ -52,6 +52,15 @@ exports.delete = async (req, res) => {
     const recipe = await recipeService.deleteRecipe(req.params.id);
     if (!recipe) return res.status(404).json({ error: 'Recipe not found' });
     res.json({ message: 'Recipe deleted' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.seedRandom = async (req, res) => {
+  try {
+    const recipe = await recipeService.seedRandomRecipe();
+    res.status(201).json({ message: 'Random recipe seeded successfully', recipe });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
