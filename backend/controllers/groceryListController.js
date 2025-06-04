@@ -1,4 +1,4 @@
-const groceryListService = require('@services/groceryListService');
+const groceryListService = require('../services/groceryListService');
 
 // Placeholder grocery list controller
 exports.generate = async (req, res) => {

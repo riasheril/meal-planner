@@ -8,11 +8,16 @@ const mongoose = require('mongoose');
 // Handles connection errors and logs status
 const connectDB = async () => {
   try {
+    console.log('Attempting to connect to MongoDB...');
+    
     await mongoose.connect(process.env.MONGODB_URI, {
       useNewUrlParser: true,
-      useUnifiedTopology: true
+      useUnifiedTopology: true,
+      serverSelectionTimeoutMS: 30000, // Increase timeout to 30 seconds
+      socketTimeoutMS: 45000, // How long to wait for operations to complete
+      family: 4 // Use IPv4, skip trying IPv6
     });
-    console.log('MongoDB connected');
+    console.log('MongoDB connected successfully');
   } catch (err) {
     console.error('MongoDB connection error:', err);
     process.exit(1);

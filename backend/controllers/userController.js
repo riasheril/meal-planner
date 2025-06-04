@@ -1,4 +1,4 @@
-const userService = require('@services/userService');
+const userService = require('../services/userService');
 
 // Placeholder user controller
 exports.register = async (req, res) => {

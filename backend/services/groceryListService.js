@@ -1,5 +1,5 @@
-const GroceryList = require('@models/GroceryList');
-const Recipe = require('@models/Recipe');
+const GroceryList = require('../models/GroceryList');
+const Recipe = require('../models/Recipe');
 const { normalizeUnit } = require('../utils/unit');
 
 // Generate a grocery list by summing ingredients from multiple recipes
