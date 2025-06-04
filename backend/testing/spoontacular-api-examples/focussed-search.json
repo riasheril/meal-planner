@@ -1,0 +1,186 @@
+{
+    "ingredients": [
+        {
+            "name": "grapeseed oil",
+            "image": "vegetable-oil.jpg",
+            "amount": {
+                "metric": {
+                    "value": 2.0,
+                    "unit": "Tbsps"
+                },
+                "us": {
+                    "value": 2.0,
+                    "unit": "Tbsps"
+                }
+            }
+        },
+        {
+            "name": "coconut oil",
+            "image": "oil-coconut.jpg",
+            "amount": {
+                "metric": {
+                    "value": 2.0,
+                    "unit": "Tbsps"
+                },
+                "us": {
+                    "value": 2.0,
+                    "unit": "Tbsps"
+                }
+            }
+        },
+        {
+            "name": "green dark scallions",
+            "image": "spring-onions.jpg",
+            "amount": {
+                "metric": {
+                    "value": 7.0,
+                    "unit": ""
+                },
+                "us": {
+                    "value": 7.0,
+                    "unit": ""
+                }
+            }
+        },
+        {
+            "name": "garlic",
+            "image": "garlic.png",
+            "amount": {
+                "metric": {
+                    "value": 5.0,
+                    "unit": "cloves"
+                },
+                "us": {
+                    "value": 5.0,
+                    "unit": "cloves"
+                }
+            }
+        },
+        {
+            "name": "raw cauliflower",
+            "image": "cauliflower.jpg",
+            "amount": {
+                "metric": {
+                    "value": 1.0,
+                    "unit": "head"
+                },
+                "us": {
+                    "value": 1.0,
+                    "unit": "head"
+                }
+            }
+        },
+        {
+            "name": "cooked brown rice",
+            "image": "rice-brown-cooked.png",
+            "amount": {
+                "metric": {
+                    "value": 585.0,
+                    "unit": "g"
+                },
+                "us": {
+                    "value": 3.0,
+                    "unit": "cups"
+                }
+            }
+        },
+        {
+            "name": "cooked broccoli",
+            "image": "broccoli.jpg",
+            "amount": {
+                "metric": {
+                    "value": 176.0,
+                    "unit": "g"
+                },
+                "us": {
+                    "value": 2.0,
+                    "unit": "cups"
+                }
+            }
+        },
+        {
+            "name": "frozen peas",
+            "image": "peas.jpg",
+            "amount": {
+                "metric": {
+                    "value": 145.0,
+                    "unit": "g"
+                },
+                "us": {
+                    "value": 1.0,
+                    "unit": "cup"
+                }
+            }
+        },
+        {
+            "name": "low sodium soy sauce",
+            "image": "soy-sauce.jpg",
+            "amount": {
+                "metric": {
+                    "value": 3.0,
+                    "unit": "Tbsps"
+                },
+                "us": {
+                    "value": 3.0,
+                    "unit": "Tbsps"
+                }
+            }
+        },
+        {
+            "name": "sesame oil",
+            "image": "sesame-oil.png",
+            "amount": {
+                "metric": {
+                    "value": 2.0,
+                    "unit": "tsps"
+                },
+                "us": {
+                    "value": 2.0,
+                    "unit": "tsps"
+                }
+            }
+        },
+        {
+            "name": "sesame seeds",
+            "image": "sesame-seeds.png",
+            "amount": {
+                "metric": {
+                    "value": 8.0,
+                    "unit": "servings"
+                },
+                "us": {
+                    "value": 8.0,
+                    "unit": "servings"
+                }
+            }
+        },
+        {
+            "name": "additional scallion tops",
+            "image": "spring-onions.jpg",
+            "amount": {
+                "metric": {
+                    "value": 8.0,
+                    "unit": "servings"
+                },
+                "us": {
+                    "value": 8.0,
+                    "unit": "servings"
+                }
+            }
+        },
+        {
+            "name": "salt",
+            "image": "salt.jpg",
+            "amount": {
+                "metric": {
+                    "value": 8.0,
+                    "unit": "servings"
+                },
+                "us": {
+                    "value": 8.0,
+                    "unit": "servings"
+                }
+            }
+        }
+    ]
+} 
