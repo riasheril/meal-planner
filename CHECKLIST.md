@@ -12,7 +12,6 @@ A comprehensive checklist to align, connect, and enhance the MealApp project (fr
   - [ ] Handle API errors and rate limits
   - [ ] Add caching for fetched recipes (optional)
 - [ ] **Recipe Logic**
-  - [ ] Extend recipe service/controller to fetch from Spoonacular if not in DB
   - [ ] Store/caches new recipes in MongoDB
   - [ ] Expose endpoints for search, details, and user favorites
 - [ ] **User Authentication**
