@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('dotenv').config({ path: 'C:/Users/steve/OneDrive/Documents/_Organized/02_Programming/Bootcamp/Meal Map/Meal Map/backend/.env' });
 const mongoose = require('mongoose');
 
 // config/db.js
@@ -9,6 +9,7 @@ const mongoose = require('mongoose');
 const connectDB = async () => {
   try {
     console.log('Attempting to connect to MongoDB...');
+    console.log('MONGODB_URI:', process.env.MONGODB_URI);
     
     await mongoose.connect(process.env.MONGODB_URI, {
       useNewUrlParser: true,
