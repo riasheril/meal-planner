@@ -64,4 +64,21 @@ exports.seedRandom = async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+};
+
+// Discover recipes based on user preferences
+exports.discover = async (req, res) => {
+  try {
+    const { cuisineTypes, dietaryRestrictions, cookingTime, servingSize } = req.body;
+    const query = {};
+    if (cuisineTypes && cuisineTypes.length) query.cuisine = { $in: cuisineTypes };
+    if (dietaryRestrictions && dietaryRestrictions.length) query.tags = { $all: dietaryRestrictions };
+    if (cookingTime) query.cookingTime = { $lte: cookingTime };
+    if (servingSize) query.servingSize = servingSize;
+    const Recipe = require('../models/Recipe');
+    const recipes = await Recipe.find(query);
+    res.json(recipes);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 }; 

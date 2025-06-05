@@ -16,5 +16,7 @@ router.post('/seed-random', recipeController.seedRandom);
 router.put('/:id', recipeController.update);
 // Delete a recipe
 router.delete('/:id', recipeController.delete);
+// Add this new route for personalized recipe discovery
+router.post('/discover', recipeController.discover);
 
 module.exports = router; 

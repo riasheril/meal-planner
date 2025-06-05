@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ChefHat } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Recipe, generateRecipes } from "@/components/recipes/RecipeData";
 import RecipeCard from "@/components/recipes/RecipeCard";
 import RecipeFilters from "@/components/recipes/RecipeFilters";
@@ -9,13 +9,16 @@ import CompletionModal from "@/components/recipes/CompletionModal";
 import { saveSelectedRecipes } from "@/utils/recipeStorage";
 
 const Recipes = () => {
+  const location = useLocation();
   const [selectedRecipes, setSelectedRecipes] = useState<Recipe[]>([]);
   const [showCompletionModal, setShowCompletionModal] = useState(false);
   const [recipeSet, setRecipeSet] = useState(0);
   const [mealTypeFilter, setMealTypeFilter] = useState<string>("all");
   const navigate = useNavigate();
 
-  const [availableRecipes, setAvailableRecipes] = useState<Recipe[]>(generateRecipes(0));
+  // Use recipes from navigation state if available, otherwise fallback to local data
+  const initialRecipes = location.state?.recipes || generateRecipes(0);
+  const [availableRecipes, setAvailableRecipes] = useState<Recipe[]>(initialRecipes);
 
   // Filter recipes based on meal type
   const filteredRecipes = mealTypeFilter === "all" 

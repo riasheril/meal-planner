@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -37,12 +36,28 @@ const Onboarding = () => {
     }
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (currentStep < totalSteps) {
       setCurrentStep(currentStep + 1);
     } else {
-      // Navigate to recipe selection
-      navigate("/recipes");
+      // Send preferences to backend and fetch recipes
+      try {
+        const response = await fetch('/api/recipes/discover', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            cuisineTypes: preferences.cuisinePreferences,
+            dietaryRestrictions: preferences.dietaryRestrictions,
+            cookingTime: Number(preferences.cookingTime),
+            servingSize: preferences.servingSize
+          })
+        });
+        const recipes = await response.json();
+        // Navigate to /recipes and pass recipes as state
+        navigate('/recipes', { state: { recipes } });
+      } catch (error) {
+        alert('Failed to fetch recipes. Please try again.');
+      }
     }
   };
 
