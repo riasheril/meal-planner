@@ -20,16 +20,26 @@ async function seedRecipes() {
     }
 
     let offset = 0;
-    const recipesPerCall = 48;
+    const maxBatchSize = 48;
     let totalRecipesFetched = 0;
     let totalResults = Infinity; // Will be updated with first API call
 
-    while (totalRecipesFetched < totalResults) {
+    while (true) {
+      // Calculate how many recipes to request
+      const remainingRecipes = totalResults - totalRecipesFetched;
+      const batchSize = remainingRecipes < maxBatchSize ? remainingRecipes : maxBatchSize;
+      
+      // If no more recipes to fetch, break
+      if (batchSize <= 0) {
+        console.log('No more recipes available to fetch');
+        break;
+      }
+
       console.log(`Fetching recipes with offset ${offset}...`);
       const response = await axios.get(`${SPOONACULAR_BASE_URL}/complexSearch`, {
         params: {
           apiKey: SPOONACULAR_API_KEY,
-          number: recipesPerCall,
+          number: batchSize,
           offset: offset,
           addRecipeInformation: true,
           fillIngredients: true,
@@ -71,20 +81,27 @@ async function seedRecipes() {
       }));
 
       console.log(`Attempting to insert ${recipes.length} recipes...`);
-      if (recipes.length < recipesPerCall) {
-        console.log('This is the final batch of recipes');
-      }
       const result = await Recipe.insertMany(recipes);
       console.log(`Successfully inserted ${result.length} recipes`);
 
       totalRecipesFetched += recipes.length;
-      offset += recipesPerCall;
+      offset += recipes.length; // Use actual number of recipes received for next offset
 
       // Add a small delay to avoid hitting API rate limits
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
 
     console.log(`Finished seeding database. Total recipes inserted: ${totalRecipesFetched}`);
+    return {
+      recipes: result,
+      pagination: {
+        currentOffset: offset,
+        totalFetched: totalRecipesFetched,
+        totalAvailable: totalResults,
+        hasMore: totalRecipesFetched < totalResults,
+        isComplete: totalRecipesFetched >= totalResults || response.data.results.length === 0
+      }
+    };
   } catch (error) {
     console.error('Error seeding recipes:', error);
     throw error;
