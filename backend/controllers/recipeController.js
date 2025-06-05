@@ -1,9 +1,10 @@
 const recipeService = require('../services/recipeService');
+const spoonacularService = require('../services/spoonacularService');
 
 exports.list = async (req, res) => {
   try {
     const recipes = await recipeService.listRecipes();
-    res.json({ recipes });
+    res.json(Array.isArray(recipes) ? recipes : []);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -12,7 +13,7 @@ exports.list = async (req, res) => {
 exports.filter = async (req, res) => {
   try {
     const recipes = await recipeService.filterRecipes(req.query);
-    res.json({ recipes });
+    res.json(Array.isArray(recipes) ? recipes : []);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -76,8 +77,16 @@ exports.discover = async (req, res) => {
     if (cookingTime) query.cookingTime = { $lte: cookingTime };
     if (servingSize) query.servingSize = servingSize;
     const Recipe = require('../models/Recipe');
-    const recipes = await Recipe.find(query);
-    res.json(recipes);
+    let recipes = await Recipe.find(query);
+    if (recipes.length < 10) {
+      try {
+        await spoonacularService.searchRecipes({ cuisineTypes, dietaryRestrictions, cookingTime, servingSize });
+        recipes = await Recipe.find(query);
+      } catch (spoonacularError) {
+        console.error('Spoonacular fetch failed:', spoonacularError);
+      }
+    }
+    res.json(Array.isArray(recipes) ? recipes : []);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

@@ -1,4 +1,4 @@
-require('dotenv').config({ path: 'C:/Users/steve/OneDrive/Documents/_Organized/02_Programming/Bootcamp/Meal Map/Meal Map/backend/.env' });
+require('dotenv').config({ path: __dirname + '/../.env' });
 const mongoose = require('mongoose');
 const connectDB = require('../config/db');
 
