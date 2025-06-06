@@ -1,0 +1,51 @@
+Detailed User Flow Pseudo-Code:
+
+	Create Account .onClick >> POST new user to DB
+
+	Cuisine preferences next.OnClick>> PUT user.preferences.cuisines
+		
+		selections map onto supported cuisines
+			
+			e.g. European in onboarding >> European, French, Italian, German, etc
+
+	Dietary Restrictions next.OnClick >> PUT user.preferences.dietaryRestrictions
+
+	Cooking Time next.onClick >> PUT user.preferences.cookingTime
+
+	Serving Size next.onClick >> user.preferences.servingSize
+
+	Find Recipes .onClick >> GET spoonacular API/ComplexSearch with parameters
+
+	Build Plan .onClick >> PUT user.chosenRecipes with recipe IDs
+
+			    >> GET spoonacular informationBulk with recipe IDs
+
+			    >> POST groceryList
+
+	Recipe Card onClick >> GET spoonacular API/recipeInformation with ID
+
+	========================================================================================
+
+Caching Solution
+
+	RecipePlan is 2D array with only IDs saved across sessions
+
+		MealPlan[0][0] = Day 1 breakfast ID
+		MealPlan[2][2] = Day 3 dinner ID
+		.
+		.
+		.
+		etc
+	
+	Recipes cleared at log-out
+
+	user.mealPlan stores IDs
+
+	Recipe information repopulated at log-in with GET informationBulk{id1},{id2}...{idn} API call
+
+	
+
+	
+			
+
+	
