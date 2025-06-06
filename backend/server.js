@@ -6,6 +6,7 @@ const userRoutes = require('./routes/user');
 const recipeRoutes = require('./routes/recipe');
 const groceryListRoutes = require('./routes/groceryList');
 const { checkJwt } = require('./middleware/auth');
+const userController = require('./controllers/userController');
 
 const app = express();
 app.use(cors());
@@ -22,6 +23,12 @@ app.get('/', (req, res) => {
 // Protected routes that require JWT
 app.use('/api/recipes', checkJwt, recipeRoutes);
 app.use('/api/grocery-lists', checkJwt, groceryListRoutes);
+
+// Public user routes
+app.post('/api/users/register', userController.register);
+app.post('/api/users/login', userController.login);
+
+// Protected user routes
 app.use('/api/users', checkJwt, userRoutes);
 
 // Error handling middleware

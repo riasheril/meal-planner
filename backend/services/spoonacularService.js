@@ -179,8 +179,71 @@ async function seedRandomRecipe() {
   }
 }
 
+// Search Spoonacular for recipes based on preferences and save new ones to DB
+async function searchRecipes(preferences) {
+  const params = {
+    apiKey: SPOONACULAR_API_KEY,
+    number: 10,
+    addRecipeInformation: true,
+    fillIngredients: true,
+    instructionsRequired: true
+  };
+  if (preferences.cuisineTypes && preferences.cuisineTypes.length) {
+    params.cuisine = preferences.cuisineTypes.join(',');
+  }
+  if (preferences.dietaryRestrictions && preferences.dietaryRestrictions.length) {
+    params.diet = preferences.dietaryRestrictions.join(',');
+  }
+  if (preferences.cookingTime) {
+    params.maxReadyTime = preferences.cookingTime;
+  }
+  if (preferences.servingSize) {
+    params.servings = preferences.servingSize;
+  }
+
+  const response = await axios.get(`${SPOONACULAR_BASE_URL}/complexSearch`, { params });
+  const results = response.data.results || [];
+  const newRecipes = [];
+  for (const recipe of results) {
+    const exists = await Recipe.findOne({ apiId: recipe.id });
+    if (!exists) {
+      const formatted = {
+        apiId: recipe.id,
+        title: recipe.title,
+        ingredients: recipe.extendedIngredients?.map(ing => ({
+          name: ing.name,
+          quantity: ing.amount,
+          unit: ing.unit
+        })) || [],
+        instructions: recipe.analyzedInstructions?.[0]?.steps.map(step => ({
+          step: step.number,
+          text: step.step
+        })) || [],
+        tags: [
+          ...(recipe.dishTypes || []),
+          ...(recipe.vegan ? ['vegan'] : []),
+          ...(recipe.vegetarian ? ['vegetarian'] : []),
+          ...(recipe.glutenFree ? ['gluten-free'] : []),
+          ...(recipe.dairyFree ? ['dairy-free'] : []),
+          ...(recipe.veryHealthy ? ['healthy'] : []),
+        ],
+        cuisine: recipe.cuisines?.[0] || '',
+        cookingTime: recipe.readyInMinutes,
+        servingSize: recipe.servings,
+        nutrition: recipe.nutrition,
+        image: recipe.image,
+        sourceUrl: recipe.sourceUrl
+      };
+      const created = await Recipe.create(formatted);
+      newRecipes.push(created);
+    }
+  }
+  return newRecipes;
+}
+
 module.exports = {
   seedRecipes,
   fetchDetailedRecipes,
-  seedRandomRecipe
+  seedRandomRecipe,
+  searchRecipes
 };

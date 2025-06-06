@@ -20,10 +20,13 @@ const Recipes = () => {
   const initialRecipes = location.state?.recipes || generateRecipes(0);
   const [availableRecipes, setAvailableRecipes] = useState<Recipe[]>(initialRecipes);
 
+  // Ensure availableRecipes is always an array
+  const safeAvailableRecipes = Array.isArray(availableRecipes) ? availableRecipes : [];
+
   // Filter recipes based on meal type
   const filteredRecipes = mealTypeFilter === "all" 
-    ? availableRecipes 
-    : availableRecipes.filter(recipe => recipe.mealType === mealTypeFilter);
+    ? safeAvailableRecipes 
+    : safeAvailableRecipes.filter(recipe => recipe.mealType === mealTypeFilter);
 
   const toggleRecipe = (recipe: Recipe) => {
     const isAlreadySelected = selectedRecipes.some(r => r.id === recipe.id);
