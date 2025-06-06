@@ -1,83 +1,14 @@
-# Project Integration & Feature Checklist
+# 🚀 Lean MVP To-Do (Auth, DB, Spoonacular)
 
-A comprehensive checklist to align, connect, and enhance the MealApp project (frontend + backend), including API integration, user authentication, and deployment readiness.
+**Focus: Only what's needed for a real, working MVP.**
 
----
-
-## 1. Backend
-
-- [ ] **Spoonacular Integration**
-  - [ ] Create `spoonacularService.js` for API calls (search, details)
-  - [ ] Securely manage API key via environment variables
-  - [ ] Handle API errors and rate limits
-  - [ ] Add caching for fetched recipes (optional)
-- [ ] **Recipe Logic**
-  - [ ] Store/caches new recipes in MongoDB
-  - [ ] Expose endpoints for search, details, and user favorites
-- [ ] **User Authentication**
-  - [ ] Implement user registration/login (JWT or session-based)
-  - [ ] Secure endpoints (recipes, meal plans, grocery lists) for authenticated users
-  - [ ] Password hashing and validation
-  - [ ] Add user model/schema if not present
-- [ ] **API Endpoints**
-  - [ ] `/api/recipes/search` (Spoonacular + local)
-  - [ ] `/api/recipes/:id` (details, local or Spoonacular)
-  - [ ] `/api/users/register` and `/api/users/login`
-  - [ ] `/api/meal-plans` (CRUD, user-specific)
-  - [ ] `/api/grocery-lists` (CRUD, user-specific)
-- [ ] **Testing**
-  - [ ] Unit tests for services/controllers
-  - [ ] Integration tests for endpoints
-- [ ] **Documentation**
-  - [ ] Update backend README with setup, env, and API usage
-
----
-
-## 2. Frontend
-
-- [ ] **API Integration**
-  - [ ] Replace local recipe generation with backend fetch (React Query/axios)
-  - [ ] Fetch recipe details from backend
-  - [ ] Implement search/filter UI (calls backend)
-- [ ] **User Authentication**
-  - [ ] Registration and login forms
-  - [ ] Store JWT/token securely (httpOnly cookie or localStorage)
-  - [ ] Auth context/provider for user state
-  - [ ] Protect routes (recipes, meal plan, grocery list)
-  - [ ] Logout functionality
-- [ ] **Meal Plan & Grocery List**
-  - [ ] Fetch/save meal plans and grocery lists per user
-  - [ ] UI for creating/editing meal plans
-  - [ ] UI for managing grocery lists
-- [ ] **Error & Loading States**
-  - [ ] Show loading spinners/placeholders
-  - [ ] Show error messages for failed API calls
-- [ ] **Testing**
-  - [ ] Component and integration tests
-- [ ] **Documentation**
-  - [ ] Update frontend README with setup, env, and usage
-
----
-
-## 3. DevOps & Deployment
-
-- [ ] **Environment**
-  - [ ] Add `.env.example` files for frontend and backend
-  - [ ] Ensure API keys/secrets are not committed
-- [ ] **Deployment**
-  - [ ] Prepare for deployment (Vercel/Netlify for frontend, Render/Heroku for backend, etc.)
-  - [ ] Add deployment instructions to README
-- [ ] **GitHub**
-  - [ ] Push this checklist to remote
-  - [ ] Set up branch protection and PR review (optional)
-
----
-
-## 4. (Optional) Enhancements
-- [ ] User profile management
-- [ ] Recipe ratings/comments
-- [ ] Mobile responsiveness improvements
-
----
-
-**Check off items as you complete them!** 
+- [ ] AUTH: Decide on single auth flow (Auth0 or custom JWT) and ensure login returns usable token for frontend
+- [ ] AUTH: Ensure all protected endpoints require valid auth (JWT or Auth0)
+- [ ] AUTH: Frontend can register, login, and persist session (token/cookie)
+- [ ] DB: Ensure MongoDB connection is robust and uses env vars in all environments
+- [ ] DB: User, Recipe, and GroceryList models are working and validated
+- [ ] DB: Cascade or handle deletes for user/recipe relationships
+- [ ] SPOONACULAR: API key in .env, never hardcoded
+- [ ] SPOONACULAR: Handle API rate limits and errors gracefully
+- [ ] SPOONACULAR: Recipe search/discover works end-to-end (frontend → backend → Spoonacular → DB → frontend)
+- [ ] TEST: Manual test of user flow: register → login → search recipes → save/choose recipe → see in DB 
