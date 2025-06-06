@@ -1,12 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChefHat, ArrowRight, ArrowLeft } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
+import { useAuth0 } from '@auth0/auth0-react';
 import CuisinePreferences from "@/components/onboarding/CuisinePreferences";
 import DietaryRestrictions from "@/components/onboarding/DietaryRestrictions";
 import CookingTime from "@/components/onboarding/CookingTime";
 import ServingSize from "@/components/onboarding/ServingSize";
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 const Onboarding = () => {
   const [currentStep, setCurrentStep] = useState(1);
@@ -17,6 +20,34 @@ const Onboarding = () => {
     servingSize: 2
   });
   const navigate = useNavigate();
+  const { isAuthenticated, isLoading, loginWithRedirect, getAccessTokenSilently } = useAuth0();
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      loginWithRedirect({
+        appState: { returnTo: '/onboarding' },
+        authorizationParams: {
+          screen_hint: 'signup',
+          prompt: 'login'
+        }
+      });
+    }
+  }, [isLoading, isAuthenticated, loginWithRedirect]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-orange-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return null; // This will trigger the useEffect to redirect
+  }
 
   const totalSteps = 4;
   const stepTitles = ["Cuisine Preferences", "Dietary Restrictions", "Cooking Time", "Serving Size"];
@@ -40,11 +71,14 @@ const Onboarding = () => {
     if (currentStep < totalSteps) {
       setCurrentStep(currentStep + 1);
     } else {
-      // Send preferences to backend and fetch recipes
       try {
-        const response = await fetch('/api/recipes/discover', {
+        const token = await getAccessTokenSilently();
+        const response = await fetch(`${API_URL}/api/recipes/discover`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
           body: JSON.stringify({
             cuisineTypes: preferences.cuisinePreferences,
             dietaryRestrictions: preferences.dietaryRestrictions,
@@ -52,11 +86,17 @@ const Onboarding = () => {
             servingSize: preferences.servingSize
           })
         });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
         const recipes = await response.json();
-        // Navigate to /recipes and pass recipes as state
         navigate('/recipes', { state: { recipes } });
       } catch (error) {
-        alert('Failed to fetch recipes. Please try again.');
+        console.error('Error fetching recipes:', error);
+        // For now, just navigate to recipes page even if the API call fails
+        navigate('/recipes');
       }
     }
   };

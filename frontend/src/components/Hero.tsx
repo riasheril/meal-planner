@@ -26,8 +26,10 @@ const Hero = () => {
                 size="lg" 
                 className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
                 onClick={() => loginWithRedirect({
+                  appState: { returnTo: '/recipes' },
                   authorizationParams: {
-                    screen_hint: 'signup'
+                    screen_hint: 'signup',
+                    prompt: 'login'
                   }
                 })}
               >
