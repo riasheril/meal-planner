@@ -41,7 +41,7 @@ const Login = () => {
           </CardHeader>
           <CardContent className="text-center">
             <Button 
-              onClick={() => logout({ returnTo: window.location.origin })}
+              onClick={() => logout({ logoutParams: { returnTo: window.location.origin } })}
               className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl"
             >
               Log Out
