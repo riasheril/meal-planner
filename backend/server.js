@@ -5,6 +5,7 @@ const connectDB = require('./config/db');
 const userRoutes = require('./routes/user');
 const recipeRoutes = require('./routes/recipe');
 const groceryListRoutes = require('./routes/groceryList');
+const { checkJwt } = require('./middleware/auth');
 
 const app = express();
 app.use(cors());
@@ -18,15 +19,19 @@ app.get('/', (req, res) => {
   res.send('Recipe App Backend is running!');
 });
 
+// Protected routes that require JWT
+app.use('/api/recipes', checkJwt, recipeRoutes);
+app.use('/api/grocery-lists', checkJwt, groceryListRoutes);
+app.use('/api/users', checkJwt, userRoutes);
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
+  if (err.name === 'UnauthorizedError') {
+    return res.status(401).json({ error: 'Invalid token' });
+  }
   res.status(500).send('Something broke!');
 });
-
-app.use('/api/users', userRoutes);
-app.use('/api/recipes', recipeRoutes);
-app.use('/api/grocery-lists', groceryListRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

@@ -1,7 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { ChefHat, Calendar, ShoppingCart } from "lucide-react";
-import { Link } from "react-router-dom";
+import { useAuth0 } from '@auth0/auth0-react';
+
 const Hero = () => {
+  const { loginWithRedirect } = useAuth0();
+
   return <section className="pt-24 pb-16 px-6 gradient-bg min-h-screen flex items-center">
       <div className="container mx-auto">
         <div className="max-w-4xl mx-auto text-center">
@@ -19,12 +22,17 @@ const Hero = () => {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
-              <Link to="/signup">
-                <Button size="lg" className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300">
-                  Start Planning
-                </Button>
-              </Link>
-              
+              <Button 
+                size="lg" 
+                className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                onClick={() => loginWithRedirect({
+                  authorizationParams: {
+                    screen_hint: 'signup'
+                  }
+                })}
+              >
+                Start Planning
+              </Button>
             </div>
           </div>
           
