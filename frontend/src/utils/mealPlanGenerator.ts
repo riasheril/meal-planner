@@ -1,51 +1,74 @@
-
 import { Recipe, MealAssignment } from "@/types/meal-plan";
 
 export const generateMealPlan = (selectedRecipes: Recipe[]): MealAssignment[] => {
   if (selectedRecipes.length === 0) return [];
 
-  // Generate a meal plan with the same number of days as recipes selected (up to 7 days max)
   const numDays = Math.min(selectedRecipes.length, 7);
-  
-  console.log(`Generating meal plan for ${selectedRecipes.length} recipes, creating ${numDays} days`);
-  
-  // Separate breakfast recipes from other recipes
-  const breakfastRecipes = selectedRecipes.filter(recipe => recipe.mealType === 'breakfast');
-  const otherRecipes = selectedRecipes.filter(recipe => recipe.mealType !== 'breakfast');
-  
-  // Generate meal assignments for each day
-  const weeklyPlan: MealAssignment[] = [];
-  
+  const breakfastRecipes = selectedRecipes.filter(r => r.mealType === "breakfast");
+  const lunchDinnerRecipes = selectedRecipes.filter(r => r.mealType !== "breakfast");
+
+  // Track how many times each recipe is used
+  const recipeUsage: Record<number, number> = {};
+  selectedRecipes.forEach(r => { recipeUsage[r.id] = 0; });
+
+  const getNextRecipe = (pool: Recipe[], fallbackPool: Recipe[]) => {
+    // Try to find a recipe in pool used < 3 times
+    let candidate = pool.find(r => recipeUsage[r.id] < 3);
+    if (candidate) return candidate;
+    // If none, try fallback pool
+    candidate = fallbackPool.find(r => recipeUsage[r.id] < 3);
+    if (candidate) return candidate;
+    // If still none, return null (shouldn't happen unless not enough recipes)
+    return null;
+  };
+
+  const plan: MealAssignment[] = [];
   for (let day = 0; day < numDays; day++) {
     const dayName = `Day${day + 1}`;
-    
-    // For breakfast, prioritize breakfast recipes if available, otherwise cycle through all recipes
-    let breakfastMeal: Recipe;
+    let breakfast: Recipe | null = null;
+    let lunch: Recipe | null = null;
+    let dinner: Recipe | null = null;
+
+    // 1. Breakfast slot
     if (breakfastRecipes.length > 0) {
-      const sourceRecipe = breakfastRecipes[day % breakfastRecipes.length];
-      breakfastMeal = { ...sourceRecipe }; // Create a new object to avoid circular references
+      breakfast = getNextRecipe(breakfastRecipes, lunchDinnerRecipes);
     } else {
-      const sourceRecipe = selectedRecipes[day % selectedRecipes.length];
-      breakfastMeal = { ...sourceRecipe }; // Create a new object to avoid circular references
+      breakfast = getNextRecipe(lunchDinnerRecipes, breakfastRecipes);
     }
-    
-    // For lunch and dinner, cycle through all selected recipes
-    const lunchSourceRecipe = selectedRecipes[(day * 3 + 1) % selectedRecipes.length];
-    const lunchMeal = { ...lunchSourceRecipe }; // Create a new object to avoid circular references
-    
-    const dinnerSourceRecipe = selectedRecipes[(day * 3 + 2) % selectedRecipes.length];
-    const dinnerMeal = { ...dinnerSourceRecipe }; // Create a new object to avoid circular references
-    
-    weeklyPlan.push({
+    if (breakfast) recipeUsage[breakfast.id]++;
+
+    // 2. Lunch slot
+    if (lunchDinnerRecipes.length > 0) {
+      lunch = getNextRecipe(lunchDinnerRecipes, breakfastRecipes);
+    } else {
+      // fallback to breakfast recipes if no lunch/dinner
+      lunch = getNextRecipe(breakfastRecipes, lunchDinnerRecipes);
+    }
+    // Don't use a breakfast recipe for lunch if we have lunch/dinner recipes
+    if (lunch && lunch.mealType === "breakfast" && lunchDinnerRecipes.length > 0) {
+      lunch = getNextRecipe(lunchDinnerRecipes, []);
+    }
+    if (lunch) recipeUsage[lunch.id]++;
+
+    // 3. Dinner slot
+    if (lunchDinnerRecipes.length > 0) {
+      dinner = getNextRecipe(lunchDinnerRecipes, breakfastRecipes);
+    } else {
+      dinner = getNextRecipe(breakfastRecipes, lunchDinnerRecipes);
+    }
+    if (dinner && dinner.mealType === "breakfast" && lunchDinnerRecipes.length > 0) {
+      dinner = getNextRecipe(lunchDinnerRecipes, []);
+    }
+    if (dinner) recipeUsage[dinner.id]++;
+
+    plan.push({
       day: dayName,
       meals: {
-        breakfast: breakfastMeal,
-        lunch: lunchMeal,
-        dinner: dinnerMeal
-      }
+        breakfast: breakfast!,
+        lunch: lunch!,
+        dinner: dinner!,
+      },
     });
   }
-  
-  console.log(`Generated ${weeklyPlan.length} days in meal plan:`, weeklyPlan);
-  return weeklyPlan;
+  return plan;
 };
