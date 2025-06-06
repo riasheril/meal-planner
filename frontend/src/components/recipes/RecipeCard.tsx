@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Clock, Users, Check } from "lucide-react";
 import { Recipe } from "./RecipeData";
@@ -37,27 +36,26 @@ const RecipeCard = ({ recipe, isSelected, canSelect, onToggle }: RecipeCardProps
       </CardHeader>
       
       <CardContent>
-        <div className="flex items-center justify-between text-sm text-gray-500 mb-2">
-          <div className="flex items-center">
-            <Clock className="w-4 h-4 mr-1" />
-            {recipe.prepTime}
+        <div className="mt-6 flex flex-col gap-8">
+          <div className="flex justify-between items-center text-sm text-gray-500">
+            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+              recipe.mealType === 'breakfast' ? 'bg-yellow-100 text-yellow-800' :
+              recipe.mealType === 'lunch' ? 'bg-blue-100 text-blue-800' :
+              'bg-purple-100 text-purple-800'
+            }`}>
+              {recipe.mealType.charAt(0).toUpperCase() + recipe.mealType.slice(1)}
+            </span>
+            <div className="flex items-center gap-6">
+              <div className="flex items-center">
+                <Clock className="w-4 h-4 mr-1" />
+                {recipe.prepTime}
+              </div>
+              <div className="flex items-center">
+                <Users className="w-4 h-4 mr-1" />
+                {recipe.servings}
+              </div>
+            </div>
           </div>
-          <div className="flex items-center">
-            <Users className="w-4 h-4 mr-1" />
-            {recipe.servings}
-          </div>
-          <div className="px-2 py-1 bg-gray-100 rounded text-xs">
-            {recipe.difficulty}
-          </div>
-        </div>
-        <div className="flex justify-end">
-          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-            recipe.mealType === 'breakfast' ? 'bg-yellow-100 text-yellow-800' :
-            recipe.mealType === 'lunch' ? 'bg-blue-100 text-blue-800' :
-            'bg-purple-100 text-purple-800'
-          }`}>
-            {recipe.mealType.charAt(0).toUpperCase() + recipe.mealType.slice(1)}
-          </span>
         </div>
       </CardContent>
     </Card>
