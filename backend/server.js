@@ -22,8 +22,7 @@ app.get('/', (req, res) => {
 
 // Protected routes that require JWT
 app.use('/api/recipes', checkJwt, recipeRoutes);
-//app.use('/api/grocery-lists', checkJwt, groceryListRoutes);
-app.use('/api/grocery-lists', groceryListRoutes)
+app.use('/api/grocery-lists', checkJwt, groceryListRoutes);
 
 // Public user routes
 app.post('/api/users/register', userController.register);

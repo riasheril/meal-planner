@@ -70,7 +70,10 @@ exports.seedRandom = async (req, res) => {
 // Discover recipes based on user preferences
 exports.discover = async (req, res) => {
   try {
-    const { cuisineTypes, dietaryRestrictions, cookTimeCategory, servingSize } = req.body;
+    let { cuisineTypes, dietaryRestrictions, cookTimeCategory, servingSize } = req.body;
+    // Normalize all to lowercase for case-insensitive matching
+    cuisineTypes = (cuisineTypes || []).map(c => c.toLowerCase());
+    dietaryRestrictions = (dietaryRestrictions || []).map(d => d.toLowerCase());
     // Map cookTimeCategory to min/max
     let minCook = null, maxCook = null;
     if (cookTimeCategory === 'Hangry') {
@@ -81,19 +84,36 @@ exports.discover = async (req, res) => {
     } else if (cookTimeCategory === 'Patient') {
       minCook = 41;
     }
-    const query = {};
-    if (cuisineTypes && cuisineTypes.length) query.cuisine = { $in: cuisineTypes };
-    if (dietaryRestrictions && dietaryRestrictions.length) query.tags = { $all: dietaryRestrictions };
-    if (minCook !== null && maxCook !== null) query.cookingTime = { $gte: minCook, $lte: maxCook };
-    else if (minCook !== null) query.cookingTime = { $gte: minCook };
-    else if (maxCook !== null) query.cookingTime = { $lte: maxCook };
-    if (servingSize) query.servingSize = servingSize;
     const Recipe = require('../models/Recipe');
-    let recipes = await Recipe.find(query);
+    // Fetch all recipes and filter in JS for case-insensitive match
+    let allRecipes = await Recipe.find();
+    let recipes = allRecipes.filter(r => {
+      // Cuisine match (if any)
+      if (cuisineTypes.length && !cuisineTypes.includes((r.cuisine || '').toLowerCase())) return false;
+      // Dietary restrictions (all must be present in tags, case-insensitive)
+      if (dietaryRestrictions.length && !dietaryRestrictions.every(dr => (r.tags || []).map(t => t.toLowerCase()).includes(dr))) return false;
+      // Cooking time
+      if (minCook !== null && maxCook !== null && !(r.cookingTime >= minCook && r.cookingTime <= maxCook)) return false;
+      if (minCook !== null && maxCook === null && !(r.cookingTime >= minCook)) return false;
+      if (maxCook !== null && minCook === null && !(r.cookingTime <= maxCook)) return false;
+      // Serving size
+      if (servingSize && r.servingSize !== servingSize) return false;
+      return true;
+    });
+    // If not enough, try to fetch more from Spoonacular
     if (recipes.length < 10) {
       try {
         await spoonacularService.searchRecipes({ cuisineTypes, dietaryRestrictions, cookTimeCategory, servingSize });
-        recipes = await Recipe.find(query);
+        allRecipes = await Recipe.find();
+        recipes = allRecipes.filter(r => {
+          if (cuisineTypes.length && !cuisineTypes.includes((r.cuisine || '').toLowerCase())) return false;
+          if (dietaryRestrictions.length && !dietaryRestrictions.every(dr => (r.tags || []).map(t => t.toLowerCase()).includes(dr))) return false;
+          if (minCook !== null && maxCook !== null && !(r.cookingTime >= minCook && r.cookingTime <= maxCook)) return false;
+          if (minCook !== null && maxCook === null && !(r.cookingTime >= minCook)) return false;
+          if (maxCook !== null && minCook === null && !(r.cookingTime <= maxCook)) return false;
+          if (servingSize && r.servingSize !== servingSize) return false;
+          return true;
+        });
       } catch (spoonacularError) {
         console.error('Spoonacular fetch failed:', spoonacularError);
       }
