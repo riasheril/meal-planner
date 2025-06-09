@@ -4,19 +4,19 @@ export const generateMealPlan = (selectedRecipes: Recipe[]): MealAssignment[] =>
   if (selectedRecipes.length === 0) return [];
 
   const numDays = Math.min(selectedRecipes.length, 7);
-  const breakfastRecipes = selectedRecipes.filter(r => r.mealType === "breakfast");
-  const lunchDinnerRecipes = selectedRecipes.filter(r => r.mealType !== "breakfast");
+  const breakfastRecipes = selectedRecipes.filter(r => r.tags.includes("breakfast"));
+  const lunchDinnerRecipes = selectedRecipes.filter(r => !r.tags.includes("breakfast"));
 
   // Track how many times each recipe is used
-  const recipeUsage: Record<number, number> = {};
-  selectedRecipes.forEach(r => { recipeUsage[r.id] = 0; });
+  const recipeUsage: Record<string, number> = {};
+  selectedRecipes.forEach(r => { recipeUsage[r._id] = 0; });
 
   const getNextRecipe = (pool: Recipe[], fallbackPool: Recipe[]) => {
     // Try to find a recipe in pool used < 3 times
-    let candidate = pool.find(r => recipeUsage[r.id] < 3);
+    let candidate = pool.find(r => recipeUsage[r._id] < 3);
     if (candidate) return candidate;
     // If none, try fallback pool
-    candidate = fallbackPool.find(r => recipeUsage[r.id] < 3);
+    candidate = fallbackPool.find(r => recipeUsage[r._id] < 3);
     if (candidate) return candidate;
     // If still none, return null (shouldn't happen unless not enough recipes)
     return null;
@@ -35,7 +35,7 @@ export const generateMealPlan = (selectedRecipes: Recipe[]): MealAssignment[] =>
     } else {
       breakfast = getNextRecipe(lunchDinnerRecipes, breakfastRecipes);
     }
-    if (breakfast) recipeUsage[breakfast.id]++;
+    if (breakfast) recipeUsage[breakfast._id]++;
 
     // 2. Lunch slot
     if (lunchDinnerRecipes.length > 0) {
@@ -45,10 +45,10 @@ export const generateMealPlan = (selectedRecipes: Recipe[]): MealAssignment[] =>
       lunch = getNextRecipe(breakfastRecipes, lunchDinnerRecipes);
     }
     // Don't use a breakfast recipe for lunch if we have lunch/dinner recipes
-    if (lunch && lunch.mealType === "breakfast" && lunchDinnerRecipes.length > 0) {
+    if (lunch && lunch.tags.includes("breakfast") && lunchDinnerRecipes.length > 0) {
       lunch = getNextRecipe(lunchDinnerRecipes, []);
     }
-    if (lunch) recipeUsage[lunch.id]++;
+    if (lunch) recipeUsage[lunch._id]++;
 
     // 3. Dinner slot
     if (lunchDinnerRecipes.length > 0) {
@@ -56,10 +56,10 @@ export const generateMealPlan = (selectedRecipes: Recipe[]): MealAssignment[] =>
     } else {
       dinner = getNextRecipe(breakfastRecipes, lunchDinnerRecipes);
     }
-    if (dinner && dinner.mealType === "breakfast" && lunchDinnerRecipes.length > 0) {
+    if (dinner && dinner.tags.includes("breakfast") && lunchDinnerRecipes.length > 0) {
       dinner = getNextRecipe(lunchDinnerRecipes, []);
     }
-    if (dinner) recipeUsage[dinner.id]++;
+    if (dinner) recipeUsage[dinner._id]++;
 
     plan.push({
       day: dayName,

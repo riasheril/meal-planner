@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
@@ -6,7 +5,7 @@ import { Recipe } from "./RecipeData";
 
 interface SelectedRecipesSidebarProps {
   selectedRecipes: Recipe[];
-  onRemoveRecipe: (recipeId: number) => void;
+  onRemoveRecipe: (recipeId: string) => void;
   onCompleteSelection: () => void;
   onBuildPlan: () => void;
 }
@@ -26,13 +25,13 @@ const SelectedRecipesSidebar = ({ selectedRecipes, onRemoveRecipe, onCompleteSel
           ) : (
             <div className="space-y-3">
               {selectedRecipes.map((recipe) => (
-                <div key={recipe.id} className="flex items-start justify-between p-3 bg-emerald-50 rounded-lg">
+                <div key={recipe._id} className="flex items-start justify-between p-3 bg-emerald-50 rounded-lg">
                   <div className="flex-1">
-                    <h4 className="font-medium text-gray-900 text-sm">{recipe.name}</h4>
-                    <p className="text-xs text-gray-600 mt-1">{recipe.prepTime} • {recipe.servings} servings</p>
+                    <h4 className="font-medium text-gray-900 text-sm">{recipe.title}</h4>
+                    <p className="text-xs text-gray-600 mt-1">{recipe.cookingTime} min • {recipe.servingSize} servings</p>
                   </div>
                   <button 
-                    onClick={() => onRemoveRecipe(recipe.id)} 
+                    onClick={() => onRemoveRecipe(recipe._id)} 
                     className="ml-2 text-gray-400 hover:text-red-500 transition-colors"
                   >
                     <X className="w-4 h-4" />

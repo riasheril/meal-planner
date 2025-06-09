@@ -952,5 +952,10 @@ const recipeTemplates: Recipe[] = [
   }
 ];
 
+export function generateRecipes(setNumber: number = 0): Recipe[] {
+  const shuffled = [...recipeTemplates].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, 12);
+}
+
 export default recipeTemplates;
   

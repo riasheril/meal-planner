@@ -17,21 +17,28 @@ const Recipes = () => {
   const navigate = useNavigate();
 
   // Use recipes from navigation state if available, otherwise fallback to local data
-  // const initialRecipes = location.state?.recipes || generateRecipes(0);
-  const [availableRecipes, setAvailableRecipes] = useState<Recipe[]>([]);
+  const initialRecipes = (location.state?.recipes && location.state.recipes.length > 0)
+    ? location.state.recipes
+    : generateRecipes(0);
+  const [availableRecipes, setAvailableRecipes] = useState<Recipe[]>(initialRecipes);
 
   // Ensure availableRecipes is always an array
   const safeAvailableRecipes = Array.isArray(availableRecipes) ? availableRecipes : [];
 
   // Filter recipes based on meal type
-  const filteredRecipes = mealTypeFilter === "all" 
-    ? safeAvailableRecipes 
-    : safeAvailableRecipes.filter(recipe => recipe.mealType === mealTypeFilter);
+  const filteredRecipes = safeAvailableRecipes.filter(recipe => 
+    mealTypeFilter === "all" 
+      ? true 
+      : recipe.tags.includes(mealTypeFilter)
+  );
+
+  console.log("safeAvailableRecipes", safeAvailableRecipes);
+  console.log("filteredRecipes", filteredRecipes);
 
   const toggleRecipe = (recipe: Recipe) => {
-    const isAlreadySelected = selectedRecipes.some(r => r.id === recipe.id);
+    const isAlreadySelected = selectedRecipes.some(r => r._id === recipe._id);
     if (isAlreadySelected) {
-      setSelectedRecipes(selectedRecipes.filter(r => r.id !== recipe.id));
+      setSelectedRecipes(selectedRecipes.filter(r => r._id !== recipe._id));
     } else if (selectedRecipes.length < 7) {
       const newSelection = [...selectedRecipes, recipe];
       setSelectedRecipes(newSelection);
@@ -43,8 +50,8 @@ const Recipes = () => {
     }
   };
 
-  const removeSelectedRecipe = (recipeId: number) => {
-    setSelectedRecipes(selectedRecipes.filter(r => r.id !== recipeId));
+  const removeSelectedRecipe = (recipeId: string) => {
+    setSelectedRecipes(selectedRecipes.filter(r => r._id !== recipeId));
   };
 
   const showMoreRecipes = () => {
@@ -99,11 +106,11 @@ const Recipes = () => {
             
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               {filteredRecipes.map(recipe => {
-                const isSelected = selectedRecipes.some(r => r.id === recipe.id);
+                const isSelected = selectedRecipes.some(r => r._id === recipe._id);
                 const canSelect = selectedRecipes.length < 7 || isSelected;
                 return (
                   <RecipeCard
-                    key={recipe.id}
+                    key={recipe._id}
                     recipe={recipe}
                     isSelected={isSelected}
                     canSelect={canSelect}

@@ -78,12 +78,12 @@ const WeeklyCalendar = ({ weeklyPlan, mealStatus, onMealClick, onStatusUpdate }:
                         {mealType}
                       </p>
                       <h4 className="text-sm font-semibold text-gray-900 line-clamp-2 leading-relaxed">
-                        {recipe?.name || <span className="text-gray-400 italic">No recipe</span>}
+                        {recipe?.title || <span className="text-gray-400 italic">No recipe</span>}
                       </h4>
                     </div>
                     <div className="flex items-center text-xs text-gray-500 mt-auto">
                       <Clock className="w-3 h-3 mr-1" />
-                      {recipe?.prepTime || "--"}
+                      {recipe?.cookingTime ? `${recipe.cookingTime} mins` : "--"}
                     </div>
                   </div>
                 </div>
