@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ChefHat } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Recipe, generateRecipes } from "@/components/recipes/RecipeData";
+// import { Recipe, generateRecipes } from "@/components/recipes/RecipeData";
 import RecipeCard from "@/components/recipes/RecipeCard";
 import RecipeFilters from "@/components/recipes/RecipeFilters";
 import SelectedRecipesSidebar from "@/components/recipes/SelectedRecipesSidebar";
@@ -17,8 +17,8 @@ const Recipes = () => {
   const navigate = useNavigate();
 
   // Use recipes from navigation state if available, otherwise fallback to local data
-  const initialRecipes = location.state?.recipes || generateRecipes(0);
-  const [availableRecipes, setAvailableRecipes] = useState<Recipe[]>(initialRecipes);
+  // const initialRecipes = location.state?.recipes || generateRecipes(0);
+  const [availableRecipes, setAvailableRecipes] = useState<Recipe[]>([]);
 
   // Ensure availableRecipes is always an array
   const safeAvailableRecipes = Array.isArray(availableRecipes) ? availableRecipes : [];
@@ -50,7 +50,7 @@ const Recipes = () => {
   const showMoreRecipes = () => {
     const nextSet = recipeSet + 1;
     setRecipeSet(nextSet);
-    setAvailableRecipes(generateRecipes(nextSet));
+    // setAvailableRecipes(generateRecipes(nextSet)); // Mock fallback
   };
 
   const handleGoToCalendar = () => {
