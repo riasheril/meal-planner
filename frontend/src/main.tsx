@@ -24,7 +24,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         clientId={clientId!}
         authorizationParams={{
           redirect_uri: window.location.origin + '/onboarding',
-          audience: 'https://' + domain + '/api/v2/',
+          audience: 'https:/mealplannerapi.com/api/login',
           scope: 'openid profile email'
         }}
       >

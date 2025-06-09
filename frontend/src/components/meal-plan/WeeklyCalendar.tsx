@@ -1,4 +1,3 @@
-
 import { Clock, Check, X } from "lucide-react";
 import { MealAssignment, MealStatus, Recipe } from "@/types/meal-plan";
 
@@ -71,7 +70,7 @@ const WeeklyCalendar = ({ weeklyPlan, mealStatus, onMealClick, onStatusUpdate }:
                   </div>
 
                   <div 
-                    onClick={() => onMealClick(recipe)}
+                    onClick={() => recipe && onMealClick(recipe)}
                     className="h-full p-4 flex flex-col justify-between"
                   >
                     <div>
@@ -79,12 +78,12 @@ const WeeklyCalendar = ({ weeklyPlan, mealStatus, onMealClick, onStatusUpdate }:
                         {mealType}
                       </p>
                       <h4 className="text-sm font-semibold text-gray-900 line-clamp-2 leading-relaxed">
-                        {recipe.name}
+                        {recipe?.name || <span className="text-gray-400 italic">No recipe</span>}
                       </h4>
                     </div>
                     <div className="flex items-center text-xs text-gray-500 mt-auto">
                       <Clock className="w-3 h-3 mr-1" />
-                      {recipe.prepTime}
+                      {recipe?.prepTime || "--"}
                     </div>
                   </div>
                 </div>
