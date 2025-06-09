@@ -67,7 +67,9 @@ async function seedRecipes() {
         params: {
           apiKey: SPOONACULAR_API_KEY,
           number: batchSize,
-          offset: offset,
+          offset: offset,   
+          // offset is the number of recipes to skip before starting to fetch and
+          // prevents us from fetching the same recipes over and over again
           addRecipeInformation: true,
           fillIngredients: true,
           instructionsRequired: true
