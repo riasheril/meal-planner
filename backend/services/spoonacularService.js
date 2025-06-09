@@ -3,6 +3,7 @@ const axios = require('axios');
 const Recipe = require('../models/Recipe');
 const GroceryList = require('../models/GroceryList');
 const mongoose = require('mongoose');
+const { normalizeAisle } = require('../utils/transformSpoonacular');
 
 const SPOONACULAR_API_KEY = process.env.SPOONACULAR_API_KEY;
 const SPOONACULAR_BASE_URL = 'https://api.spoonacular.com/recipes';
@@ -274,7 +275,8 @@ async function searchRecipes(preferences) {
         ingredients: recipe.extendedIngredients?.map(ing => ({
           name: ing.name,
           quantity: ing.amount,
-          unit: ing.unit
+          unit: ing.unit,
+          aisle: normalizeAisle(ing.aisle) // normalize to our 7 categories
         })) || [],
         instructions: recipe.analyzedInstructions?.[0]?.steps.map(step => ({
           step: step.number,

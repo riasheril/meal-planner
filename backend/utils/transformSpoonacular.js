@@ -1,6 +1,64 @@
 const { normalizeUnit } = require('./unit');
 
 /**
+ * Maps Spoonacular's detailed aisle categories to simplified MealMap categories
+ * @param {string} spoonacularAisle - The aisle from Spoonacular API
+ * @returns {string} - Normalized aisle category
+ */
+function normalizeAisle(spoonacularAisle) {
+  if (!spoonacularAisle) return 'Miscellaneous';
+
+  const aisleMap = {
+    // Bakery
+    'Bakery/Bread': 'Bakery',
+    'Bread': 'Bakery',
+    
+    // Dairy
+    'Milk, Eggs, Other Dairy': 'Dairy',
+    'Cheese': 'Dairy',
+    
+    // Frozen
+    'Frozen': 'Frozen',
+    
+    // Miscellaneous
+    'Health Foods': 'Miscellaneous',
+    'Refrigerated': 'Miscellaneous',
+    'Ethnic Foods': 'Miscellaneous',
+    'Gourmet': 'Miscellaneous',
+    'Gluten Free': 'Miscellaneous',
+    'Alcoholic Beverages': 'Miscellaneous',
+    'Beverages': 'Miscellaneous',
+    'Not in Grocery Store/Homemade': 'Miscellaneous',
+    'Online': 'Miscellaneous',
+    'Grilling Supplies': 'Miscellaneous',
+    
+    // Pantry
+    'Baking': 'Pantry',
+    'Spices and Seasonings': 'Pantry',
+    'Pasta and Rice': 'Pantry',
+    'Canned and Jarred': 'Pantry',
+    'Nut butters, Jams, and Honey': 'Pantry',
+    'Oil, Vinegar, Salad Dressing': 'Pantry',
+    'Condiments': 'Pantry',
+    'Savory Snacks': 'Pantry',
+    'Tea and Coffee': 'Pantry',
+    'Sweet Snacks': 'Pantry',
+    'Cereal': 'Pantry',
+    'Nuts': 'Pantry',
+    'Dried Fruits': 'Pantry',
+    
+    // Produce
+    'Produce': 'Produce',
+    
+    // Protein
+    'Meat': 'Protein',
+    'Seafood': 'Protein'
+  };
+
+  return aisleMap[spoonacularAisle] || 'Miscellaneous';
+}
+
+/**
  * Transforms Spoonacular recipe and ingredientWidget data to internal Recipe schema.
  * @param {Object} spoonacularRecipe - The recipe object from complex search (with instructions, metadata, etc.)
  * @param {Object} ingredientWidget - The ingredient widget object (with detailed US units)
@@ -10,7 +68,8 @@ function transformSpoonacularRecipe(spoonacularRecipe, ingredientWidget) {
   const ingredients = (ingredientWidget.ingredients || []).map(ing => ({
     name: ing.name,
     quantity: ing.amount.us.value,
-    unit: normalizeUnit(ing.amount.us.unit)
+    unit: normalizeUnit(ing.amount.us.unit),
+    aisle: normalizeAisle(ing.aisle)
   }));
 
   const steps = (spoonacularRecipe.analyzedInstructions && spoonacularRecipe.analyzedInstructions[0] && spoonacularRecipe.analyzedInstructions[0].steps) || [];
@@ -38,4 +97,4 @@ function transformSpoonacularRecipe(spoonacularRecipe, ingredientWidget) {
   };
 }
 
-module.exports = { transformSpoonacularRecipe }; 
+module.exports = { transformSpoonacularRecipe, normalizeAisle }; 
