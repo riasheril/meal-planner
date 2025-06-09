@@ -8,6 +8,7 @@ import CuisinePreferences from "@/components/onboarding/CuisinePreferences";
 import DietaryRestrictions from "@/components/onboarding/DietaryRestrictions";
 import CookingTime from "@/components/onboarding/CookingTime";
 import ServingSize from "@/components/onboarding/ServingSize";
+import { uiToSpoonacularCuisines } from "@/utils/cuisineMapping";
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -73,6 +74,26 @@ const Onboarding = () => {
     } else {
       try {
         const token = await getAccessTokenSilently();
+        
+        // Convert UI cuisine categories to Spoonacular cuisines
+        const spoonacularCuisines = uiToSpoonacularCuisines(preferences.cuisinePreferences);
+        
+        // Save preferences to user profile
+        await fetch(`${API_URL}/api/users/preferences`, {
+          method: 'PUT',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            preferences: {
+              ...preferences,
+              cuisineTypes: spoonacularCuisines
+            }
+          })
+        });
+
+        // Make recipe discovery API call with converted cuisines
         const response = await fetch(`${API_URL}/api/recipes/discover`, {
           method: 'POST',
           headers: { 
@@ -80,7 +101,7 @@ const Onboarding = () => {
             'Authorization': `Bearer ${token}`
           },
           body: JSON.stringify({
-            cuisineTypes: preferences.cuisinePreferences,
+            cuisineTypes: spoonacularCuisines,
             dietaryRestrictions: preferences.dietaryRestrictions,
             cookingTime: Number(preferences.cookingTime),
             servingSize: preferences.servingSize
@@ -94,7 +115,7 @@ const Onboarding = () => {
         const recipes = await response.json();
         navigate('/recipes', { state: { recipes } });
       } catch (error) {
-        console.error('Error fetching recipes:', error);
+        console.error('Error:', error);
         // For now, just navigate to recipes page even if the API call fails
         navigate('/recipes');
       }
