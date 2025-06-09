@@ -71,9 +71,12 @@ exports.seedRandom = async (req, res) => {
 exports.discover = async (req, res) => {
   try {
     let { cuisineTypes, dietaryRestrictions, cookTimeCategory, servingSize } = req.body;
+    console.log('[DISCOVER] Incoming request:', req.body);
     // Normalize all to lowercase for case-insensitive matching
     cuisineTypes = (cuisineTypes || []).map(c => c.toLowerCase());
     dietaryRestrictions = (dietaryRestrictions || []).map(d => d.toLowerCase());
+    console.log('[DISCOVER] Normalized cuisineTypes:', cuisineTypes);
+    console.log('[DISCOVER] Normalized dietaryRestrictions:', dietaryRestrictions);
     // Map cookTimeCategory to min/max
     let minCook = null, maxCook = null;
     if (cookTimeCategory === 'Hangry') {
@@ -87,6 +90,7 @@ exports.discover = async (req, res) => {
     const Recipe = require('../models/Recipe');
     // Fetch all recipes and filter in JS for case-insensitive match
     let allRecipes = await Recipe.find();
+    console.log(`[DISCOVER] Total recipes in DB: ${allRecipes.length}`);
     let recipes = allRecipes.filter(r => {
       // Cuisine match (if any)
       if (cuisineTypes.length && !cuisineTypes.includes((r.cuisine || '').toLowerCase())) return false;
@@ -100,11 +104,14 @@ exports.discover = async (req, res) => {
       if (servingSize && r.servingSize !== servingSize) return false;
       return true;
     });
+    console.log(`[DISCOVER] Recipes after filtering: ${recipes.length}`);
     // If not enough, try to fetch more from Spoonacular
     if (recipes.length < 10) {
       try {
+        console.log('[DISCOVER] Not enough recipes, calling Spoonacular...');
         await spoonacularService.searchRecipes({ cuisineTypes, dietaryRestrictions, cookTimeCategory, servingSize });
         allRecipes = await Recipe.find();
+        console.log(`[DISCOVER] Total recipes in DB after Spoonacular: ${allRecipes.length}`);
         recipes = allRecipes.filter(r => {
           if (cuisineTypes.length && !cuisineTypes.includes((r.cuisine || '').toLowerCase())) return false;
           if (dietaryRestrictions.length && !dietaryRestrictions.every(dr => (r.tags || []).map(t => t.toLowerCase()).includes(dr))) return false;
@@ -114,12 +121,15 @@ exports.discover = async (req, res) => {
           if (servingSize && r.servingSize !== servingSize) return false;
           return true;
         });
+        console.log(`[DISCOVER] Recipes after Spoonacular filtering: ${recipes.length}`);
       } catch (spoonacularError) {
-        console.error('Spoonacular fetch failed:', spoonacularError);
+        console.error('[DISCOVER] Spoonacular fetch failed:', spoonacularError);
       }
     }
+    console.log(`[DISCOVER] Returning ${recipes.length} recipes`);
     res.json(Array.isArray(recipes) ? recipes : []);
   } catch (err) {
+    console.error('[DISCOVER] Error:', err);
     res.status(500).json({ error: err.message });
   }
 }; 

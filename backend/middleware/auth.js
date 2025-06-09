@@ -2,20 +2,22 @@ const { expressjwt: jwt } = require('express-jwt');
 const jwksRsa = require('jwks-rsa');
 require('dotenv').config();
 
-// Pull Auth0 configuration from environment variables so that staging, production
-// and local environments can be swapped without code changes.
+// Pull Auth0 configuration from environment variables
 const authConfig = {
   domain: process.env.AUTH0_DOMAIN,
   audience: process.env.AUTH0_AUDIENCE,
 };
 
-// In testing or local environments we allow the server to continue running 
-// even if Auth0 env vars are not supplied.  In that case we substitute a 
-// no-op middleware so routes remain accessible.
-const authDisabled = process.env.NODE_ENV === 'test' ? true : (!authConfig.domain || !authConfig.audience);
+// Only disable auth in test environment
+const authDisabled = process.env.NODE_ENV === 'test';
 
 if (authDisabled) {
-  console.warn('Auth0 configuration not found – JWT validation DISABLED');
+  console.warn('JWT validation DISABLED - Test environment detected');
+} else if (!authConfig.domain || !authConfig.audience) {
+  console.error('Auth0 configuration missing - JWT validation will fail');
+  console.error('Required environment variables:');
+  console.error('- AUTH0_DOMAIN:', authConfig.domain ? '✓' : '✗');
+  console.error('- AUTH0_AUDIENCE:', authConfig.audience ? '✓' : '✗');
 }
 
 // Middleware to check for JWT tokens
