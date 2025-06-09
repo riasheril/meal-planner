@@ -7,6 +7,7 @@ import RecipeFilters from "@/components/recipes/RecipeFilters";
 import SelectedRecipesSidebar from "@/components/recipes/SelectedRecipesSidebar";
 import CompletionModal from "@/components/recipes/CompletionModal";
 import { saveSelectedRecipes } from "@/utils/recipeStorage";
+import { Recipe, generateRecipes } from "@/components/recipes/RecipeData"
 
 const Recipes = () => {
   const location = useLocation();
