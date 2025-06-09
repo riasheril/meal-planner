@@ -29,10 +29,7 @@ async function generateGroceryList(userId, recipeIds) {
   });
 
   // Convert back to array, format quantity as string
-  const items = Object.values(ingredientMap).map(ing => ({
-    ...ing,
-    quantity: ing.quantity.toString()
-  }));
+  const items = Object.values(ingredientMap);
 
   // Create and save grocery list
   const groceryList = new GroceryList({

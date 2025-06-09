@@ -1,18 +1,26 @@
+const express = require('express');
 const { auth } = require('express-openid-connect');
+
+// Export a fully-formed router instead of mutating a global `app` instance.
+// This prevents `ReferenceError: app is not defined` when the file is `require()`-d.
+
+const router = express.Router();
 
 const config = {
   authRequired: false,
   auth0Logout: true,
-  secret: 'a long, randomly-generated string stored in env',
-  baseURL: 'http://localhost:8080',
-  clientID: 'qOXqRwNE0ECJaIwJidoBDENu6ZrNzwmy',
-  issuerBaseURL: 'https://dev-km6ivy4lzonnfqa2.us.auth0.com'
+  secret: process.env.AUTH0_CLIENT_SECRET || 'dev-secret',
+  baseURL: process.env.BASE_URL || 'http://localhost:8080',
+  clientID: process.env.AUTH0_CLIENT_ID || 'local-client',
+  issuerBaseURL: process.env.AUTH0_ISSUER || 'https://example.com'
 };
 
-// auth router attaches /login, /logout, and /callback routes to the baseURL
-app.use(auth(config));
+// Attach Auth0 helper routes (/login, /logout, /callback)
+router.use(auth(config));
 
-// req.isAuthenticated is provided from the auth router
-app.get('/', (req, res) => {
-  res.send(req.oidc.isAuthenticated() ? 'Logged in' : 'Logged out');
+// Simple liveness/auth state check
+router.get('/', (req, res) => {
+  res.send(req.oidc && req.oidc.isAuthenticated() ? 'Logged in' : 'Logged out');
 });
+
+module.exports = router;

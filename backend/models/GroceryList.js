@@ -12,7 +12,8 @@ const GroceryListSchema = new mongoose.Schema({
       enum: [
         'mg', 'g', 'kg', 'oz', 'lb',
         'ml', 'l', 'tsp', 'tbsp', 'cup', 'pt', 'qt', 'gal', 'fl oz',
-        'piece', 'clove', 'slice', 'can', 'pack', 'bunch', 'stick', 'head', 'bottle', 'jar'
+        'piece', 'clove', 'slice', 'can', 'pack', 'bunch', 'stick', 'head', 'bottle', 'jar',
+        'medium', 'large', 'bag', 'box', 't', 'c'
       ]
     },
     checked: { type: Boolean, default: false }

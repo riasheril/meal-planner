@@ -49,6 +49,11 @@ async function seedRecipes() {
     let batchCount = 0;
     const maxBatches = 1; // Only fetch 1 batch for testing
 
+    // NEW: keep track of everything we insert so we can safely return it later
+    const insertedRecipes = [];
+    // NEW: keep the most recent API response for pagination info
+    let lastApiResponse = null;
+
     while (batchCount < maxBatches) {
       // Calculate how many recipes to request
       const remainingRecipes = totalResults - totalRecipesFetched;
@@ -113,8 +118,14 @@ async function seedRecipes() {
       const result = await Recipe.insertMany(recipes);
       console.log(`Successfully inserted ${result.length} recipes`);
 
+      // NEW: accumulate for final return
+      insertedRecipes.push(...result);
+
       totalRecipesFetched += recipes.length;
       offset += recipes.length; // Use actual number of recipes received for next offset
+
+      // Save for later pagination calculation
+      lastApiResponse = response;
 
       // Add a small delay to avoid hitting API rate limits
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -123,13 +134,14 @@ async function seedRecipes() {
 
     console.log(`Finished seeding database. Total recipes inserted: ${totalRecipesFetched}`);
     return {
-      recipes: result,
+      recipes: insertedRecipes,
       pagination: {
         currentOffset: offset,
         totalFetched: totalRecipesFetched,
         totalAvailable: totalResults,
         hasMore: totalRecipesFetched < totalResults,
-        isComplete: totalRecipesFetched >= totalResults || response.data.results.length === 0
+        isComplete:
+          totalRecipesFetched >= totalResults || (lastApiResponse && lastApiResponse.data.results.length === 0)
       }
     };
   } catch (error) {

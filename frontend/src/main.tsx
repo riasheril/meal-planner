@@ -9,9 +9,10 @@ import { BrowserRouter } from 'react-router-dom'
 // Make sure these are set in your frontend/.env.local file
 const domain = import.meta.env.VITE_AUTH0_DOMAIN
 const clientId = import.meta.env.VITE_AUTH0_CLIENT_ID
+const audience = import.meta.env.VITE_AUTH0_AUDIENCE
 
 // Ensure domain and clientId are not undefined (basic check)
-if (!domain || !clientId) {
+if (!domain || !clientId || !audience) {
   console.error("Auth0 configuration is missing. Please check your environment variables.");
   // You might want to render an error message to the user
 }
@@ -23,8 +24,8 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         domain={domain!}
         clientId={clientId!}
         authorizationParams={{
-          redirect_uri: window.location.origin + '/onboarding',
-          audience: 'https:/mealplannerapi.com/api/login',
+          redirect_uri: `${window.location.origin}/onboarding`,
+          audience: audience!,
           scope: 'openid profile email'
         }}
       >
