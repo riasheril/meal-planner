@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 
 interface DietaryRestrictionsProps {
@@ -23,10 +22,11 @@ const DietaryRestrictions = ({ selected, onUpdate }: DietaryRestrictionsProps) =
   ];
 
   const toggleSelection = (restriction: string) => {
-    if (selected.includes(restriction)) {
-      onUpdate(selected.filter(r => r !== restriction));
+    const restrictionFormatted = restriction.toLowerCase().replace(/\s+/g, '-');
+    if (selected.includes(restrictionFormatted)) {
+      onUpdate(selected.filter(r => r !== restrictionFormatted));
     } else {
-      onUpdate([...selected, restriction]);
+      onUpdate([...selected, restrictionFormatted]);
     }
   };
 
@@ -40,10 +40,10 @@ const DietaryRestrictions = ({ selected, onUpdate }: DietaryRestrictionsProps) =
         {restrictionOptions.map((restriction) => (
           <Button
             key={restriction}
-            variant={selected.includes(restriction) ? "default" : "outline"}
+            variant={selected.includes(restriction.toLowerCase().replace(/\s+/g, '-')) ? "default" : "outline"}
             onClick={() => toggleSelection(restriction)}
             className={`h-12 ${
-              selected.includes(restriction) 
+              selected.includes(restriction.toLowerCase().replace(/\s+/g, '-')) 
                 ? "bg-emerald-600 hover:bg-emerald-700 text-white" 
                 : "hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-700"
             }`}
