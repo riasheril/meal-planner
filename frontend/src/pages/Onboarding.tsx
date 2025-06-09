@@ -103,7 +103,7 @@ const Onboarding = () => {
           body: JSON.stringify({
             cuisineTypes: spoonacularCuisines,
             dietaryRestrictions: preferences.dietaryRestrictions,
-            cookingTime: Number(preferences.cookingTime),
+            cookTimeCategory: preferences.cookingTime,
             servingSize: preferences.servingSize
           })
         });

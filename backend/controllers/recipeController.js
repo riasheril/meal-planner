@@ -70,17 +70,29 @@ exports.seedRandom = async (req, res) => {
 // Discover recipes based on user preferences
 exports.discover = async (req, res) => {
   try {
-    const { cuisineTypes, dietaryRestrictions, cookingTime, servingSize } = req.body;
+    const { cuisineTypes, dietaryRestrictions, cookTimeCategory, servingSize } = req.body;
+    // Map cookTimeCategory to min/max
+    let minCook = null, maxCook = null;
+    if (cookTimeCategory === 'Hangry') {
+      maxCook = 20;
+    } else if (cookTimeCategory === 'Hungry') {
+      minCook = 21;
+      maxCook = 40;
+    } else if (cookTimeCategory === 'Patient') {
+      minCook = 41;
+    }
     const query = {};
     if (cuisineTypes && cuisineTypes.length) query.cuisine = { $in: cuisineTypes };
     if (dietaryRestrictions && dietaryRestrictions.length) query.tags = { $all: dietaryRestrictions };
-    if (cookingTime) query.cookingTime = { $lte: cookingTime };
+    if (minCook !== null && maxCook !== null) query.cookingTime = { $gte: minCook, $lte: maxCook };
+    else if (minCook !== null) query.cookingTime = { $gte: minCook };
+    else if (maxCook !== null) query.cookingTime = { $lte: maxCook };
     if (servingSize) query.servingSize = servingSize;
     const Recipe = require('../models/Recipe');
     let recipes = await Recipe.find(query);
     if (recipes.length < 10) {
       try {
-        await spoonacularService.searchRecipes({ cuisineTypes, dietaryRestrictions, cookingTime, servingSize });
+        await spoonacularService.searchRecipes({ cuisineTypes, dietaryRestrictions, cookTimeCategory, servingSize });
         recipes = await Recipe.find(query);
       } catch (spoonacularError) {
         console.error('Spoonacular fetch failed:', spoonacularError);

@@ -228,8 +228,15 @@ async function searchRecipes(preferences) {
   if (preferences.dietaryRestrictions && preferences.dietaryRestrictions.length) {
     params.diet = preferences.dietaryRestrictions.join(',');
   }
-  if (preferences.cookingTime) {
-    params.maxReadyTime = preferences.cookingTime;
+  // Cook time mapping
+  let minCook = null;
+  if (preferences.cookTimeCategory === 'Hangry') {
+    params.maxReadyTime = 20;
+  } else if (preferences.cookTimeCategory === 'Hungry') {
+    params.maxReadyTime = 40;
+    minCook = 21;
+  } else if (preferences.cookTimeCategory === 'Patient') {
+    minCook = 41;
   }
   if (preferences.servingSize) {
     params.servings = preferences.servingSize;
@@ -240,7 +247,11 @@ async function searchRecipes(preferences) {
     url: `${SPOONACULAR_BASE_URL}/complexSearch`,
     params
   });
-  const results = response.data.results || [];
+  let results = response.data.results || [];
+  // Filter for lower bound if needed
+  if (minCook !== null) {
+    results = results.filter(r => r.readyInMinutes >= minCook);
+  }
   const newRecipes = [];
   for (const recipe of results) {
     const exists = await Recipe.findOne({ apiId: recipe.id });
