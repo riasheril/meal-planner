@@ -1,6 +1,6 @@
-
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { UI_CUISINE_CATEGORIES } from "@/utils/cuisineMapping";
 
 interface CuisinePreferencesProps {
   selected: string[];
@@ -8,17 +8,6 @@ interface CuisinePreferencesProps {
 }
 
 const CuisinePreferences = ({ selected, onUpdate }: CuisinePreferencesProps) => {
-  const cuisineOptions = [
-    "African & Caribbean",
-    "American", 
-    "Asian",
-    "European",
-    "Latin American",
-    "Mediterranean",
-    "Middle Eastern",
-    "No Preference"
-  ];
-
   const toggleSelection = (cuisine: string) => {
     if (selected.includes(cuisine)) {
       onUpdate(selected.filter(c => c !== cuisine));
@@ -35,7 +24,7 @@ const CuisinePreferences = ({ selected, onUpdate }: CuisinePreferencesProps) => 
       
       <ScrollArea className="h-80 w-full rounded-md border p-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {cuisineOptions.map((cuisine) => (
+          {UI_CUISINE_CATEGORIES.map((cuisine) => (
             <Button
               key={cuisine}
               variant={selected.includes(cuisine) ? "default" : "outline"}
