@@ -7,6 +7,28 @@ const mongoose = require('mongoose');
 const SPOONACULAR_API_KEY = process.env.SPOONACULAR_API_KEY;
 const SPOONACULAR_BASE_URL = 'https://api.spoonacular.com/recipes';
 
+// Helper: axios with retry on 429/quota-exceeded
+async function axiosWithRetry(config, maxRetries = 5, initialDelay = 1000) {
+  let attempt = 0;
+  let delay = initialDelay;
+  while (true) {
+    try {
+      return await axios(config);
+    } catch (error) {
+      const status = error.response?.status;
+      const quotaExceeded = error.response?.data?.message?.toLowerCase().includes('quota') || false;
+      if ((status === 429 || quotaExceeded) && attempt < maxRetries) {
+        attempt++;
+        console.warn(`Spoonacular rate limit/quota hit. Retrying in ${delay}ms (attempt ${attempt}/${maxRetries})...`);
+        await new Promise(res => setTimeout(res, delay));
+        delay *= 2; // Exponential back-off
+      } else {
+        throw error;
+      }
+    }
+  }
+}
+
 // Function to seed the database with recipes
 async function seedRecipes() {
   try {
@@ -20,11 +42,14 @@ async function seedRecipes() {
     }
 
     let offset = 0;
-    const maxBatchSize = 48;
+    const maxBatchSize = 2; // Reduced for testing
     let totalRecipesFetched = 0;
     let totalResults = Infinity; // Will be updated with first API call
 
-    while (true) {
+    let batchCount = 0;
+    const maxBatches = 1; // Only fetch 1 batch for testing
+
+    while (batchCount < maxBatches) {
       // Calculate how many recipes to request
       const remainingRecipes = totalResults - totalRecipesFetched;
       const batchSize = remainingRecipes < maxBatchSize ? remainingRecipes : maxBatchSize;
@@ -36,7 +61,9 @@ async function seedRecipes() {
       }
 
       console.log(`Fetching recipes with offset ${offset}...`);
-      const response = await axios.get(`${SPOONACULAR_BASE_URL}/complexSearch`, {
+      const response = await axiosWithRetry({
+        method: 'get',
+        url: `${SPOONACULAR_BASE_URL}/complexSearch`,
         params: {
           apiKey: SPOONACULAR_API_KEY,
           number: batchSize,
@@ -89,6 +116,7 @@ async function seedRecipes() {
 
       // Add a small delay to avoid hitting API rate limits
       await new Promise(resolve => setTimeout(resolve, 1000));
+      batchCount++;
     }
 
     console.log(`Finished seeding database. Total recipes inserted: ${totalRecipesFetched}`);
@@ -111,7 +139,9 @@ async function seedRecipes() {
 // Function to fetch detailed info for selected recipes
 async function fetchDetailedRecipes(recipeIds) {
   try {
-    const response = await axios.get(`${SPOONACULAR_BASE_URL}/informationBulk`, {
+    const response = await axiosWithRetry({
+      method: 'get',
+      url: `${SPOONACULAR_BASE_URL}/informationBulk`,
       params: {
         apiKey: SPOONACULAR_API_KEY,
         ids: recipeIds.join(',')
@@ -137,7 +167,9 @@ async function seedRandomRecipe() {
       }
     }
 
-    const response = await axios.get(`${SPOONACULAR_BASE_URL}/random`, {
+    const response = await axiosWithRetry({
+      method: 'get',
+      url: `${SPOONACULAR_BASE_URL}/random`,
       params: {
         apiKey: SPOONACULAR_API_KEY,
         number: 1,
@@ -201,7 +233,11 @@ async function searchRecipes(preferences) {
     params.servings = preferences.servingSize;
   }
 
-  const response = await axios.get(`${SPOONACULAR_BASE_URL}/complexSearch`, { params });
+  const response = await axiosWithRetry({
+    method: 'get',
+    url: `${SPOONACULAR_BASE_URL}/complexSearch`,
+    params
+  });
   const results = response.data.results || [];
   const newRecipes = [];
   for (const recipe of results) {
