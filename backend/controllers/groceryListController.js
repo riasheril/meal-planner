@@ -1,11 +1,21 @@
 const groceryListService = require('../services/groceryListService');
+const MealPlan = require('../models/MealPlan');
+const User = require('../models/User');
 
 // Placeholder grocery list controller
 exports.generate = async (req, res) => {
   try {
-    const userId = req.user ? req.user._id : req.body.userId;
-    const { recipeIds } = req.body;
-    const groceryList = await groceryListService.generateGroceryList(userId, recipeIds);
+    const user = req.user;
+    if (!user) {
+      return res.status(401).json({ error: 'User not found or not authenticated' });
+    }
+
+    const mealPlan = await MealPlan.findOne({ user: user._id }).sort({ createdAt: -1 });
+    if (!mealPlan || !mealPlan.recipes || mealPlan.recipes.length === 0) {
+      return res.status(404).json({ error: 'No recipes in the latest meal plan to generate a grocery list from.' });
+    }
+
+    const groceryList = await groceryListService.generateGroceryList(user._id, mealPlan.recipes);
     res.status(201).json({ message: 'Grocery list generated', groceryList });
   } catch (err) {
     res.status(500).json({ error: err.message });

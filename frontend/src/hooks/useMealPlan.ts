@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Recipe, GroceryItem, MealAssignment, MealStatus } from "@/types/meal-plan";
 import { generateMealPlan } from "@/utils/mealPlanGenerator";
-import { getSelectedRecipes } from "@/utils/recipeStorage";
+import { clearSelectedRecipes } from "@/utils/recipeStorage";
 import { useAuth0 } from "@auth0/auth0-react";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
@@ -16,8 +16,8 @@ export const useMealPlan = () => {
 
   // Load selected recipes from localStorage on component mount
   useEffect(() => {
-    const recipes = getSelectedRecipes();
-    setSelectedRecipes(recipes);
+    const recipes = localStorage.getItem('selectedRecipes');
+    setSelectedRecipes(recipes ? JSON.parse(recipes) : []);
   }, []);
 
   // Re-generate weekly plan and grocery list whenever selected recipes change

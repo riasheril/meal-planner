@@ -5,6 +5,7 @@ const connectDB = require('./config/db');
 const userRoutes = require('./routes/user');
 const recipeRoutes = require('./routes/recipe');
 const groceryListRoutes = require('./routes/groceryList');
+const mealPlanRoutes = require('./routes/mealPlan');
 const { checkJwt } = require('./middleware/auth');
 const userController = require('./controllers/userController');
 
@@ -23,6 +24,7 @@ app.get('/', (req, res) => {
 // Protected routes that require JWT
 app.use('/api/recipes', checkJwt, recipeRoutes);
 app.use('/api/grocery-lists', checkJwt, groceryListRoutes);
+app.use('/api/meal-plan', checkJwt, mealPlanRoutes);
 
 // Public user routes
 app.post('/api/users/register', userController.register);
