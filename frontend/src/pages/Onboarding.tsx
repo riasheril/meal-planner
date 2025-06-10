@@ -95,27 +95,27 @@ const Onboarding = () => {
         const prefResJson = await prefRes.json().catch(() => ({}));
         console.log(`[ONBOARDING] Preferences PUT response (${prefRes.status}):`, prefResJson);
         // Make recipe discovery API call with converted cuisines
-        const discoverPayload = {
-          cuisineTypes: spoonacularCuisines,
-          dietaryRestrictions: preferences.dietaryRestrictions,
-          cookTimeCategory: preferences.cookingTime,
-          servingSize: preferences.servingSize
-        };
-        console.log("[ONBOARDING] Fetching recipes with payload:", discoverPayload);
         const response = await fetch(`${API_URL}/api/recipes/discover`, {
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
           },
-          body: JSON.stringify(discoverPayload)
+          body: JSON.stringify({
+            cuisineTypes: spoonacularCuisines,
+            ...(preferences.dietaryRestrictions.length > 0 && {
+              dietaryRestrictions: preferences.dietaryRestrictions.filter(d => d !== 'no-restrictions')
+            }),
+            cookTimeCategory: preferences.cookingTime,
+            minServings: preferences.servingSize
+          })
         });
-        const recipesJson = await response.json().catch(() => ({}));
-        console.log(`[ONBOARDING] Recipes POST response (${response.status}):`, recipesJson);
+
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-        navigate('/recipes', { state: { recipes: recipesJson.recipes || [] } });
+        const recipesJson = await response.json();
+        navigate('/recipes', { state: { recipes: recipesJson } });
       } catch (error) {
         console.error('[ONBOARDING] Error during onboarding flow:', error);
         // For now, just navigate to recipes page even if the API call fails

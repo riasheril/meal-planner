@@ -1,3 +1,4 @@
+const Recipe = require('../models/Recipe');
 const recipeService = require('../services/recipeService');
 const spoonacularService = require('../services/spoonacularService');
 
@@ -70,7 +71,7 @@ exports.seedRandom = async (req, res) => {
 // Discover recipes based on user preferences
 exports.discover = async (req, res) => {
   try {
-    let { cuisineTypes, dietaryRestrictions, cookTimeCategory, cookingTime, servingSize } = req.body;
+    let { cuisineTypes = [], dietaryRestrictions = [], cookTimeCategory, cookingTime, minServings } = req.body;
     console.log('[DISCOVER] Incoming request:', req.body);
     // Normalize all to lowercase for case-insensitive matching
     cuisineTypes = (cuisineTypes || []).map(c => c.toLowerCase());
@@ -90,18 +91,36 @@ exports.discover = async (req, res) => {
     if (cookTimeCategory === 'Hangry') {
       maxCook = 20;
     } else if (cookTimeCategory === 'Hungry') {
-      // Anything up to 40 minutes (no minimum) counts as Hungry
+      minCook = 21;
       maxCook = 40;
-    } else if (cookTimeCategory === 'Patient') {
-      minCook = 41;
     }
-    const Recipe = require('../models/Recipe');
-    // Fetch all recipes and filter in JS for case-insensitive match
+    // Patient has no max cook time
+    console.log('[DISCOVER] Cook time parameters:', { maxCook });
+
+    // Fetch all recipes from the database
     let allRecipes = await Recipe.find();
     console.log(`[DISCOVER] Total recipes in DB: ${allRecipes.length}`);
+
     let recipes = allRecipes.filter(r => {
+      // Log each recipe's filtering process
+      console.log(`[DISCOVER] Filtering recipe: ${r.title}`);
+      console.log(`[DISCOVER] Recipe details:`, {
+        cuisine: r.cuisine,
+        tags: r.tags,
+        cookingTime: r.cookingTime,
+        servingSize: r.servingSize
+      });
+
       // Cuisine match (if any)
-      if (cuisineTypes.length && !cuisineTypes.includes((r.cuisine || '').toLowerCase())) return false;
+      if (cuisineTypes.length) {
+        const recipeCuisine = (r.cuisine || '').toLowerCase();
+        const recipeTags = (r.tags || []).map(t => t.toLowerCase());
+        const hasMatchingCuisine = cuisineTypes.some(cuisine => 
+          recipeCuisine.includes(cuisine.toLowerCase()) || 
+          recipeTags.some(tag => tag.includes(cuisine.toLowerCase()))
+        );
+        if (!hasMatchingCuisine) return false;
+      }
       // Dietary restrictions: allow substring matches (e.g., "lacto ovo vegetarian" should satisfy "vegetarian")
       if (
         dietaryRestrictions.length &&
@@ -119,16 +138,28 @@ exports.discover = async (req, res) => {
       // Serving size no longer strictly filters; users can scale recipes.
       return true;
     });
+
     console.log(`[DISCOVER] Recipes after filtering: ${recipes.length}`);
+
     // If not enough, try to fetch more from Spoonacular
     if (recipes.length < 10) {
       try {
         console.log('[DISCOVER] Not enough recipes, calling Spoonacular...');
-        await spoonacularService.searchRecipes({ cuisineTypes, dietaryRestrictions, cookTimeCategory, servingSize });
+        await spoonacularService.searchRecipes({ cuisineTypes, dietaryRestrictions, cookTimeCategory, minServings });
         allRecipes = await Recipe.find();
         console.log(`[DISCOVER] Total recipes in DB after Spoonacular: ${allRecipes.length}`);
+        
+        // Apply the same filtering to the updated recipe set
         recipes = allRecipes.filter(r => {
-          if (cuisineTypes.length && !cuisineTypes.includes((r.cuisine || '').toLowerCase())) return false;
+          if (cuisineTypes.length) {
+            const recipeCuisine = (r.cuisine || '').toLowerCase();
+            const recipeTags = (r.tags || []).map(t => t.toLowerCase());
+            const hasMatchingCuisine = cuisineTypes.some(cuisine => 
+              recipeCuisine.includes(cuisine.toLowerCase()) || 
+              recipeTags.some(tag => tag.includes(cuisine.toLowerCase()))
+            );
+            if (!hasMatchingCuisine) return false;
+          }
           if (
             dietaryRestrictions.length &&
             !dietaryRestrictions.every(dr => {
