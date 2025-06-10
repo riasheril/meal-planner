@@ -3,7 +3,7 @@ const bcrypt = require('bcrypt');
 
 const UserSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
-  password: { type: String, required: true, select: false },
+  password: { type: String, select: false },
   preferences: {
     // Array of dietary restriction tags (e.g., 'vegan', 'gluten-free')
     dietaryRestrictions: { type: [String], default: [] },

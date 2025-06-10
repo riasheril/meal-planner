@@ -1,13 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ChefHat } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useAuth0 } from '@auth0/auth0-react';
 // import { Recipe, generateRecipes } from "@/components/recipes/RecipeData";
 import RecipeCard from "@/components/recipes/RecipeCard";
 import RecipeFilters from "@/components/recipes/RecipeFilters";
 import SelectedRecipesSidebar from "@/components/recipes/SelectedRecipesSidebar";
 import CompletionModal from "@/components/recipes/CompletionModal";
 import { saveSelectedRecipes } from "@/utils/recipeStorage";
-import { Recipe, generateRecipes } from "@/components/recipes/RecipeData"
+import { Recipe } from "@/types/meal-plan"; // Use your shared type
 
 const Recipes = () => {
   const location = useLocation();
@@ -16,14 +17,56 @@ const Recipes = () => {
   const [recipeSet, setRecipeSet] = useState(0);
   const [mealTypeFilter, setMealTypeFilter] = useState<string>("all");
   const navigate = useNavigate();
+  const { getAccessTokenSilently } = useAuth0();
 
   // Use recipes from navigation state if available, otherwise fallback to local data
-  const initialRecipes = (location.state?.recipes && location.state.recipes.length > 0)
-    ? location.state.recipes
-    : generateRecipes(0);
-  const [availableRecipes, setAvailableRecipes] = useState<Recipe[]>(initialRecipes);
+  // const initialRecipes = (location.state?.recipes && location.state.recipes.length > 0)
+  //   ? location.state.recipes
+  //   : generateRecipes(0);
+  // const [availableRecipes, setAvailableRecipes] = useState<Recipe[]>(initialRecipes);
+  const [availableRecipes, setAvailableRecipes] = useState<Recipe[]>([]); // Now fetched from API
+  const [loading, setLoading] = useState(true); // Loading state for API
+
+  // Fetch recipes from backend API on mount
+  // --- NEW: Fetch from real backend ---
+  useEffect(() => {
+    const fetchRecipes = async () => {
+      setLoading(true);
+      try {
+        const token = await getAccessTokenSilently();
+        const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+        // 1. Fetch user preferences
+        const prefRes = await fetch(`${API_URL}/api/users/preferences`, {
+          headers: {
+            "Authorization": `Bearer ${token}`
+          }
+        });
+        const prefData = await prefRes.json();
+        const preferences = prefData.preferences || {};
+
+        // 2. Use preferences to fetch recipes
+        const response = await fetch(`${API_URL}/api/recipes/discover`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          body: JSON.stringify(preferences),
+        });
+        const data = await response.json();
+        setAvailableRecipes(data.recipes || []);
+      } catch (error) {
+        // TODO: Handle error (show toast, etc.)
+        setAvailableRecipes([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchRecipes();
+  }, [location.state]); // Optionally, add dependencies
 
   // Ensure availableRecipes is always an array
+  // const safeAvailableRecipes = Array.isArray(availableRecipes) ? availableRecipes : [];
   const safeAvailableRecipes = Array.isArray(availableRecipes) ? availableRecipes : [];
 
   // Filter recipes based on meal type
@@ -55,11 +98,12 @@ const Recipes = () => {
     setSelectedRecipes(selectedRecipes.filter(r => r._id !== recipeId));
   };
 
-  const showMoreRecipes = () => {
-    const nextSet = recipeSet + 1;
-    setRecipeSet(nextSet);
-    // setAvailableRecipes(generateRecipes(nextSet)); // Mock fallback
-  };
+  // const showMoreRecipes = () => {
+  //   const nextSet = recipeSet + 1;
+  //   setRecipeSet(nextSet);
+  //   // setAvailableRecipes(generateRecipes(nextSet)); // Mock fallback
+  // };
+  // --- Show more recipes logic may need to be reworked for real API ---
 
   const handleGoToCalendar = () => {
     console.log("Adding recipes to calendar:", selectedRecipes);
@@ -78,7 +122,7 @@ const Recipes = () => {
   };
 
   // Check if there are more recipes available (simplified logic for now)
-  const hasMoreRecipes = recipeSet < 3; // Allow up to 4 sets of recipes
+  // const hasMoreRecipes = recipeSet < 3; // Allow up to 4 sets of recipes
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-orange-50 p-4">
@@ -101,8 +145,8 @@ const Recipes = () => {
             <RecipeFilters
               mealTypeFilter={mealTypeFilter}
               onMealTypeFilterChange={setMealTypeFilter}
-              onShowMoreRecipes={showMoreRecipes}
-              hasMoreRecipes={hasMoreRecipes}
+              onShowMoreRecipes={() => {}}
+              hasMoreRecipes={false}
             />
             
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
