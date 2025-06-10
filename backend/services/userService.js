@@ -77,6 +77,15 @@ async function addChosenRecipe(userId, recipeId) {
   );
 }
 
+// Bulk set chosen recipes
+async function setChosenRecipes(userId, recipeIds) {
+  return User.findByIdAndUpdate(
+    userId,
+    { chosenRecipes: recipeIds },
+    { new: true }
+  );
+}
+
 // Get saved recipes
 async function getSavedRecipes(userId) {
   const user = await User.findById(userId).populate('savedRecipes');
@@ -99,6 +108,7 @@ module.exports = {
   updatePreferences,
   getChosenRecipes,
   addChosenRecipe,
+  setChosenRecipes,
   getSavedRecipes,
   addSavedRecipe,
 }; 

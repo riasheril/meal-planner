@@ -52,4 +52,20 @@ export interface MealAssignment {
 export interface MealStatus {
   [key: string]: 'completed' | 'skipped' | null;
 }
+
+// -----------------------------------------------------------------------------------
+// GroceryItem – client-side representation of an individual grocery entry.
+// This is NOT the same as the shape stored in MongoDB.  The hook (useMealPlan)
+// is responsible for mapping the backend's { name, quantity, unit, checked, aisle }
+// to this richer UI-friendly structure (category, purchased, etc.).
+// -----------------------------------------------------------------------------------
+
+export interface GroceryItem {
+  id: number;            // locally generated identifier for React lists
+  name: string;
+  quantity: string;      // human-readable "3 cups", "2 lbs", etc.
+  category: string;      // Pantry / Produce / Dairy / etc.
+  purchased: boolean;    // UI toggle
+  usedIn?: string[];     // Which recipes reference this ingredient (optional)
+}
   

@@ -118,7 +118,7 @@ async function seedRecipes() {
           text: step.step
         })) || [],
         tags: recipe.dishTypes || [],
-        cuisine: recipe.cuisines?.[0] || '',
+        cuisine: (recipe.cuisines?.[0] || '').toLowerCase(),
         cookingTime: recipe.readyInMinutes,
         servingSize: recipe.servings,
         nutrition: recipe.nutrition,
@@ -218,7 +218,7 @@ async function seedRandomRecipe() {
         text: step.step
       })) || [],
       tags: recipe.dishTypes || [],
-      cuisine: recipe.cuisines?.[0] || '',
+      cuisine: (recipe.cuisines?.[0] || '').toLowerCase(),
       cookingTime: recipe.readyInMinutes,
       servingSize: recipe.servings,
       nutrition: recipe.nutrition,
@@ -244,22 +244,20 @@ async function searchRecipes(preferences) {
       fillIngredients: true,
       instructionsRequired: true
     };
-    if (preferences.cuisineTypes && preferences.cuisineTypes.length) {
+    if (preferences.cuisineTypes?.length) {
       params.cuisine = preferences.cuisineTypes.join(',');
     }
-    if (preferences.dietaryRestrictions && preferences.dietaryRestrictions.length) {
-      params.diet = preferences.dietaryRestrictions.join(',');
+    if (preferences.dietaryRestrictions?.length) {
+      params.diet = preferences.dietaryRestrictions.join('|');
     }
     // Cook time mapping
-    let minCook = null;
     if (preferences.cookTimeCategory === 'Hangry') {
       params.maxReadyTime = 20;
     } else if (preferences.cookTimeCategory === 'Hungry') {
       params.maxReadyTime = 40;
-      minCook = 21;
     } else if (preferences.cookTimeCategory === 'Patient') {
-      minCook = 41;
     }
+    
     if (preferences.servingSize) {
       params.minServings = preferences.servingSize;
     }
@@ -272,14 +270,13 @@ async function searchRecipes(preferences) {
 
     let results = response.data.results || [];
     
-    // Filter for lower bound if needed
+    console.log(`[SPOON] Received ${results.length} results from API`);
+  // Filter for lower bound if needed
     if (preferences.cookTimeCategory === 'Hangry') {
       results = results.filter(r => r.readyInMinutes <= 20);
     } else if (preferences.cookTimeCategory === 'Hungry') {
-      results = results.filter(r => r.readyInMinutes >= 21 && r.readyInMinutes <= 40);
-    } else if (preferences.cookTimeCategory === 'Patient') {
-      results = results.filter(r => r.readyInMinutes >= 41);
-    }
+      results = results.filter(r => r.readyInMinutes <= 40);
+    } 
 
     const newRecipes = [];
     for (const recipe of results) {
@@ -306,7 +303,7 @@ async function searchRecipes(preferences) {
             ...(recipe.dairyFree ? ['dairy-free'] : []),
             ...(recipe.veryHealthy ? ['healthy'] : []),
           ],
-          cuisine: recipe.cuisines?.[0] || '',
+          cuisine: (recipe.cuisines?.[0] || '').toLowerCase(),
           cookingTime: recipe.readyInMinutes,
           servingSize: recipe.servings,
           nutrition: recipe.nutrition,
@@ -318,7 +315,8 @@ async function searchRecipes(preferences) {
       }
     }
     console.log('[SPOONACULAR] Number of new recipes added to DB:', newRecipes.length);
-    return newRecipes;
+    console.log(`[SPOON] Inserted ${newRecipes.length} new recipes into DB`);
+  return newRecipes;
   } catch (error) {
     console.error('[SPOONACULAR] Error details:', {
       message: error.message,

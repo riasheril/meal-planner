@@ -6,15 +6,9 @@ const GroceryListSchema = new mongoose.Schema({
     name: { type: String, required: true, trim: true },
     quantity: { type: Number, required: true, min: 0.01 },
     // IMPORTANT: Input normalization should be applied before saving (see services/groceryListService.js)
-    unit: { 
-      type: String, 
-      required: true, 
-      enum: [
-        'mg', 'g', 'kg', 'oz', 'lb',
-        'ml', 'l', 'tsp', 'tbsp', 'cup', 'pt', 'qt', 'gal', 'fl oz',
-        'piece', 'clove', 'slice', 'can', 'pack', 'bunch', 'stick', 'head', 'bottle', 'jar',
-        'medium', 'large', 'bag', 'box', 't', 'c'
-      ]
+    unit: {
+      type: String,
+      default: ''
     },
     checked: { type: Boolean, default: false },
     aisle: { type: String, trim: true }

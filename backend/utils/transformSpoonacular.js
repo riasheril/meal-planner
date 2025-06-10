@@ -78,17 +78,26 @@ function transformSpoonacularRecipe(spoonacularRecipe, ingredientWidget) {
     text: s.step
   }));
 
+  // Collect diet tags including boolean flags for easier filtering
+  const dietTags = [];
+  if (typeof spoonacularRecipe.vegetarian === 'boolean') {
+    dietTags.push(spoonacularRecipe.vegetarian ? 'vegetarian' : 'non vegetarian');
+  }
+  if (spoonacularRecipe.vegan) dietTags.push('vegan');
+  if (spoonacularRecipe.glutenFree) dietTags.push('gluten free');
+
   return {
     apiId: spoonacularRecipe.id,
     title: spoonacularRecipe.title,
     ingredients,
     instructions,
     tags: [
+      ...dietTags,
       ...(spoonacularRecipe.diets || []),
       ...(spoonacularRecipe.dishTypes || []),
       ...(spoonacularRecipe.occasions || [])
-    ],
-    cuisine: (spoonacularRecipe.cuisines && spoonacularRecipe.cuisines[0]) || '',
+    ].map(t => t.toLowerCase()), // store lowercase for consistent searching
+    cuisine: ((spoonacularRecipe.cuisines && spoonacularRecipe.cuisines[0]) || '').toLowerCase(),
     cookingTime: spoonacularRecipe.readyInMinutes,
     servingSize: spoonacularRecipe.servings,
     nutrition: spoonacularRecipe.nutrition || {},

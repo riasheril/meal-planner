@@ -7,7 +7,7 @@ import RecipeCard from "@/components/recipes/RecipeCard";
 import RecipeFilters from "@/components/recipes/RecipeFilters";
 import SelectedRecipesSidebar from "@/components/recipes/SelectedRecipesSidebar";
 import CompletionModal from "@/components/recipes/CompletionModal";
-import { saveSelectedRecipes } from "@/utils/recipeStorage";
+import { clearSelectedRecipes } from "@/utils/recipeStorage";
 import { Recipe } from "@/types/meal-plan"; // Use your shared type
 
 const Recipes = () => {
@@ -54,7 +54,10 @@ const Recipes = () => {
           body: JSON.stringify(preferences),
         });
         const data = await response.json();
-        setAvailableRecipes(data.recipes || []);
+        const unique = Array.isArray(data.recipes)
+          ? data.recipes.filter((r: any, idx: number, arr: any[]) => arr.findIndex(x => x._id === r._id) === idx)
+          : [];
+        setAvailableRecipes(unique);
       } catch (error) {
         // TODO: Handle error (show toast, etc.)
         setAvailableRecipes([]);
@@ -105,10 +108,39 @@ const Recipes = () => {
   // };
   // --- Show more recipes logic may need to be reworked for real API ---
 
+  const saveMealPlan = async () => {
+    const token = await getAccessTokenSilently();
+    const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+    const recipeIds = selectedRecipes.map(r => r._id);
+
+    try {
+      const response = await fetch(`${API_URL}/api/meal-plan`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ recipeIds }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save meal plan');
+      }
+
+      // Clear local storage after successful save
+      clearSelectedRecipes();
+      
+    } catch (error) {
+      console.error('Error saving meal plan:', error);
+      // Handle error (e.g., show a toast to the user)
+    }
+  };
+
   const handleGoToCalendar = () => {
     console.log("Adding recipes to calendar:", selectedRecipes);
-    saveSelectedRecipes(selectedRecipes);
-    navigate("/meal-plan");
+    saveMealPlan().then(() => {
+      navigate("/meal-plan");
+    });
   };
 
   const handleChooseDifferent = () => {
@@ -117,8 +149,9 @@ const Recipes = () => {
 
   const handleBuildPlan = () => {
     console.log("Building plan with selected recipes:", selectedRecipes);
-    saveSelectedRecipes(selectedRecipes);
-    navigate("/meal-plan");
+    saveMealPlan().then(() => {
+      navigate("/meal-plan");
+    });
   };
 
   // Check if there are more recipes available (simplified logic for now)
