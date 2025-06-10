@@ -71,7 +71,7 @@ exports.seedRandom = async (req, res) => {
 // Discover recipes based on user preferences
 exports.discover = async (req, res) => {
   try {
-    const { cuisineTypes = [], dietaryRestrictions = [], cookTimeCategory, cookingTime, minServings } = req.body;
+    let { cuisineTypes = [], dietaryRestrictions = [], cookTimeCategory, cookingTime, minServings } = req.body;
     console.log('[DISCOVER] Incoming request:', req.body);
     // Normalize all to lowercase for case-insensitive matching
     cuisineTypes = (cuisineTypes || []).map(c => c.toLowerCase());
@@ -97,6 +97,10 @@ exports.discover = async (req, res) => {
     // Patient has no max cook time
     console.log('[DISCOVER] Cook time parameters:', { maxCook });
 
+    // Fetch all recipes from the database
+    let allRecipes = await Recipe.find();
+    console.log(`[DISCOVER] Total recipes in DB: ${allRecipes.length}`);
+
     let recipes = allRecipes.filter(r => {
       // Log each recipe's filtering process
       console.log(`[DISCOVER] Filtering recipe: ${r.title}`);
@@ -108,7 +112,15 @@ exports.discover = async (req, res) => {
       });
 
       // Cuisine match (if any)
-      if (cuisineTypes.length && !cuisineTypes.includes((r.cuisine || '').toLowerCase())) return false;
+      if (cuisineTypes.length) {
+        const recipeCuisine = (r.cuisine || '').toLowerCase();
+        const recipeTags = (r.tags || []).map(t => t.toLowerCase());
+        const hasMatchingCuisine = cuisineTypes.some(cuisine => 
+          recipeCuisine.includes(cuisine.toLowerCase()) || 
+          recipeTags.some(tag => tag.includes(cuisine.toLowerCase()))
+        );
+        if (!hasMatchingCuisine) return false;
+      }
       // Dietary restrictions: allow substring matches (e.g., "lacto ovo vegetarian" should satisfy "vegetarian")
       if (
         dietaryRestrictions.length &&
@@ -139,7 +151,15 @@ exports.discover = async (req, res) => {
         
         // Apply the same filtering to the updated recipe set
         recipes = allRecipes.filter(r => {
-          if (cuisineTypes.length && !cuisineTypes.includes((r.cuisine || '').toLowerCase())) return false;
+          if (cuisineTypes.length) {
+            const recipeCuisine = (r.cuisine || '').toLowerCase();
+            const recipeTags = (r.tags || []).map(t => t.toLowerCase());
+            const hasMatchingCuisine = cuisineTypes.some(cuisine => 
+              recipeCuisine.includes(cuisine.toLowerCase()) || 
+              recipeTags.some(tag => tag.includes(cuisine.toLowerCase()))
+            );
+            if (!hasMatchingCuisine) return false;
+          }
           if (
             dietaryRestrictions.length &&
             !dietaryRestrictions.every(dr => {

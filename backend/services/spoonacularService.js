@@ -239,7 +239,7 @@ async function searchRecipes(preferences) {
   try {
     const params = {
       apiKey: SPOONACULAR_API_KEY,
-      number: 10,
+      number: 48,
       addRecipeInformation: true,
       fillIngredients: true,
       instructionsRequired: true
@@ -271,7 +271,9 @@ async function searchRecipes(preferences) {
     let results = response.data.results || [];
     
     console.log(`[SPOON] Received ${results.length} results from API`);
-  // Filter for lower bound if needed
+    console.log('[SPOON] First few recipe titles:', results.slice(0, 3).map(r => r.title));
+
+    // Filter for lower bound if needed
     if (preferences.cookTimeCategory === 'Hangry') {
       results = results.filter(r => r.readyInMinutes <= 20);
     } else if (preferences.cookTimeCategory === 'Hungry') {
@@ -302,6 +304,7 @@ async function searchRecipes(preferences) {
             ...(recipe.glutenFree ? ['gluten-free'] : []),
             ...(recipe.dairyFree ? ['dairy-free'] : []),
             ...(recipe.veryHealthy ? ['healthy'] : []),
+            ...(recipe.cuisines || []), // Add cuisines as tags for better matching
           ],
           cuisine: (recipe.cuisines?.[0] || '').toLowerCase(),
           cookingTime: recipe.readyInMinutes,
@@ -310,8 +313,15 @@ async function searchRecipes(preferences) {
           image: recipe.image,
           sourceUrl: recipe.sourceUrl
         };
-        const created = await Recipe.create(formatted);
-        newRecipes.push(created);
+        try {
+          const created = await Recipe.create(formatted);
+          newRecipes.push(created);
+          console.log(`[SPOON] Added new recipe: ${created.title}`);
+        } catch (error) {
+          console.error(`[SPOON] Error creating recipe ${recipe.title}:`, error.message);
+        }
+      } else {
+        console.log(`[SPOON] Recipe already exists: ${recipe.title}`);
       }
     }
     console.log('[SPOONACULAR] Number of new recipes added to DB:', newRecipes.length);
