@@ -50,7 +50,7 @@ const RecipeCard = ({ recipe, isSelected, canSelect, onToggle }: RecipeCardProps
             <div className="flex items-center gap-6">
               <div className="flex items-center">
                 <Clock className="w-4 h-4 mr-1" />
-                {recipe.cookingTime}
+                {recipe.cookingTime} mins
               </div>
               <div className="flex items-center">
                 <Users className="w-4 h-4 mr-1" />

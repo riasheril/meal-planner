@@ -28,7 +28,7 @@ const SelectedRecipesSidebar = ({ selectedRecipes, onRemoveRecipe, onCompleteSel
                 <div key={recipe._id} className="flex items-start justify-between p-3 bg-emerald-50 rounded-lg">
                   <div className="flex-1">
                     <h4 className="font-medium text-gray-900 text-sm">{recipe.title}</h4>
-                    <p className="text-xs text-gray-600 mt-1">{recipe.cookingTime} min • {recipe.servingSize} servings</p>
+                    <p className="text-xs text-gray-600 mt-1">{recipe.cookingTime} mins • {recipe.servingSize} servings</p>
                   </div>
                   <button 
                     onClick={() => onRemoveRecipe(recipe._id)} 
