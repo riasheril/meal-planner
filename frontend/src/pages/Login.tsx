@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChefHat, Eye, EyeOff } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useAuth0 } from '@auth0/auth0-react';
 
 const Login = () => {
@@ -17,6 +17,11 @@ const Login = () => {
     logout,
     getAccessTokenSilently
   } = useAuth0();
+
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  const authError = params.get("error_description");
+  const { error } = useAuth0();
 
   if (isLoading) {
     return <div>Loading...</div>;
@@ -70,6 +75,16 @@ const Login = () => {
         </CardHeader>
         
         <CardContent>
+          {authError && (
+            <div className="text-red-600 text-center mb-4">
+              {authError}
+            </div>
+          )}
+          {error && (
+            <div className="text-red-600 text-center mb-4">
+              {error.message || "Authentication error. Please try again."}
+            </div>
+          )}
           <Button 
             onClick={() => loginWithRedirect()}
             className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl"

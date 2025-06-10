@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChefHat, ArrowRight, ArrowLeft } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth0 } from '@auth0/auth0-react';
 import CuisinePreferences from "@/components/onboarding/CuisinePreferences";
 import DietaryRestrictions from "@/components/onboarding/DietaryRestrictions";
@@ -21,7 +21,10 @@ const Onboarding = () => {
     servingSize: 2
   });
   const navigate = useNavigate();
-  const { isAuthenticated, isLoading, loginWithRedirect, getAccessTokenSilently } = useAuth0();
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  const authError = params.get("error_description");
+  const { isAuthenticated, isLoading, loginWithRedirect, getAccessTokenSilently, error } = useAuth0();
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -74,48 +77,47 @@ const Onboarding = () => {
     } else {
       try {
         const token = await getAccessTokenSilently();
-        
-        // Convert UI cuisine categories to Spoonacular cuisines
+        console.log("[ONBOARDING] Got Auth0 token:", token);
         const spoonacularCuisines = uiToSpoonacularCuisines(preferences.cuisinePreferences);
-        
-        // Save preferences to user profile
-        await fetch(`${API_URL}/api/users/preferences`, {
+        const preferencesPayload = {
+          ...preferences,
+          cuisineTypes: spoonacularCuisines
+        };
+        console.log("[ONBOARDING] Saving preferences to backend:", preferencesPayload);
+        const prefRes = await fetch(`${API_URL}/api/users/preferences`, {
           method: 'PUT',
           headers: { 
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
           },
-          body: JSON.stringify({
-            preferences: {
-              ...preferences,
-              cuisineTypes: spoonacularCuisines
-            }
-          })
+          body: JSON.stringify({ preferences: preferencesPayload })
         });
-
+        const prefResJson = await prefRes.json().catch(() => ({}));
+        console.log(`[ONBOARDING] Preferences PUT response (${prefRes.status}):`, prefResJson);
         // Make recipe discovery API call with converted cuisines
+        const discoverPayload = {
+          cuisineTypes: spoonacularCuisines,
+          dietaryRestrictions: preferences.dietaryRestrictions,
+          cookTimeCategory: preferences.cookingTime,
+          servingSize: preferences.servingSize
+        };
+        console.log("[ONBOARDING] Fetching recipes with payload:", discoverPayload);
         const response = await fetch(`${API_URL}/api/recipes/discover`, {
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
           },
-          body: JSON.stringify({
-            cuisineTypes: spoonacularCuisines,
-            dietaryRestrictions: preferences.dietaryRestrictions,
-            cookTimeCategory: preferences.cookingTime,
-            servingSize: preferences.servingSize
-          })
+          body: JSON.stringify(discoverPayload)
         });
-
+        const recipesJson = await response.json().catch(() => ({}));
+        console.log(`[ONBOARDING] Recipes POST response (${response.status}):`, recipesJson);
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-
-        const recipes = await response.json();
-        navigate('/recipes', { state: { recipes } });
+        navigate('/recipes', { state: { recipes: recipesJson } });
       } catch (error) {
-        console.error('Error:', error);
+        console.error('[ONBOARDING] Error during onboarding flow:', error);
         // For now, just navigate to recipes page even if the API call fails
         navigate('/recipes');
       }
@@ -171,6 +173,16 @@ const Onboarding = () => {
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-orange-50 flex items-center justify-center p-4">
       <Card className="w-full max-w-2xl">
         <CardHeader className="text-center space-y-4">
+          {(authError || error) && (
+            <div className="mb-4">
+              {authError && (
+                <div className="text-red-600 text-center mb-2">{authError}</div>
+              )}
+              {error && (
+                <div className="text-red-600 text-center mb-2">{error.message || "Authentication error. Please try again."}</div>
+              )}
+            </div>
+          )}
           <div className="flex items-center justify-between">
             <Link to="/" className="flex items-center text-gray-600 hover:text-emerald-600 transition-colors">
               <ArrowLeft className="w-5 h-5 mr-1" />

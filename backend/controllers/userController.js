@@ -33,10 +33,13 @@ exports.getPreferences = async (req, res) => {
 
 exports.updatePreferences = async (req, res) => {
   try {
+    console.log("[API] PUT /api/users/preferences called. req.user:", req.user, "req.body:", req.body);
     const userId = req.user ? req.user._id : req.body.userId;
-    const updated = await userService.updatePreferences(userId, req.body.preferences);
+    const updated = await userService.updatePreferences(userId, req.body.preferences, req.user);
+    console.log("[API] Preferences updated result:", updated);
     res.json({ message: 'Preferences updated', preferences: updated.preferences });
   } catch (err) {
+    console.error("[API] Error in updatePreferences:", err);
     res.status(500).json({ error: err.message });
   }
 };
