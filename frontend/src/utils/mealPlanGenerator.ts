@@ -1,6 +1,6 @@
 import { Recipe, MealAssignment } from "@/types/meal-plan";
 
-// Define meal slots (easy to expand if needed)
+// Three meals per day
 const MEALS_PER_DAY = ["breakfast", "lunch", "dinner"];
 const MAX_RECIPE_USAGE = 3;
 
@@ -90,7 +90,11 @@ export const generateMealPlan = (selectedRecipes: Recipe[]): MealAssignment[] =>
     // Save day's meal assignment
     plan.push({
       day: `Day${day + 1}`,
-      meals,
+      meals: {
+        breakfast: meals.breakfast,
+        lunch: meals.lunch,
+        dinner: meals.dinner
+      }
     });
   }
 

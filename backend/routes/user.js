@@ -14,6 +14,8 @@ router.put('/preferences', userController.updatePreferences);
 router.get('/chosen-recipes', userController.getChosenRecipes);
 // Add to chosen recipes
 router.post('/chosen-recipes', userController.addChosenRecipe);
+// Bulk update chosen recipes
+router.put('/chosen-recipes', userController.setChosenRecipes);
 // Get saved recipes
 router.get('/saved-recipes', userController.getSavedRecipes);
 // Add to saved recipes

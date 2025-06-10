@@ -54,7 +54,10 @@ const Recipes = () => {
           body: JSON.stringify(preferences),
         });
         const data = await response.json();
-        setAvailableRecipes(data.recipes || []);
+        const unique = Array.isArray(data.recipes)
+          ? data.recipes.filter((r: any, idx: number, arr: any[]) => arr.findIndex(x => x._id === r._id) === idx)
+          : [];
+        setAvailableRecipes(unique);
       } catch (error) {
         // TODO: Handle error (show toast, etc.)
         setAvailableRecipes([]);

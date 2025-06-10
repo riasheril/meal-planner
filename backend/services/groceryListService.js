@@ -1,6 +1,7 @@
 const GroceryList = require('../models/GroceryList');
 const Recipe = require('../models/Recipe');
 const { normalizeUnit } = require('../utils/unit');
+const User = require('../models/User');
 
 // Generate a grocery list by summing ingredients from multiple recipes
 async function generateGroceryList(userId, recipeIds) {
@@ -11,10 +12,14 @@ async function generateGroceryList(userId, recipeIds) {
   const ingredientMap = {};
   recipes.forEach(recipe => {
     recipe.ingredients.forEach(ing => {
-      const normalizedUnit = normalizeUnit(ing.unit);
-      if (!normalizedUnit) return; // Skip invalid units
+      let normalizedUnit = normalizeUnit(ing.unit);
+      if (normalizedUnit === null) {
+        // Accept unitless items instead of skipping completely
+        normalizedUnit = '';
+      }
       const key = `${ing.name.toLowerCase()}|${normalizedUnit}`;
-      const qty = parseFloat(ing.quantity);
+      let qty = parseFloat(ing.quantity);
+      if (isNaN(qty) || qty === 0) qty = 1;
       if (!ingredientMap[key]) {
         ingredientMap[key] = {
           name: ing.name,
@@ -39,6 +44,8 @@ async function generateGroceryList(userId, recipeIds) {
     relatedRecipes: recipeIds
   });
   await groceryList.save();
+  // Add grocery list to user's groceryLists array
+  await User.findByIdAndUpdate(userId, { $push: { groceryLists: groceryList._id } });
   return groceryList;
 }
 

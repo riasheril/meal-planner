@@ -2,14 +2,16 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 
 const UserSchema = new mongoose.Schema({
-  email: { type: String, required: true, unique: true },
+  email: { type: String, unique: true, sparse: true },
   password: { type: String, select: false },
+  // For users authenticated via Auth0 we store their unique `sub` identifier.
+  auth0Id: { type: String, unique: true, sparse: true },
   preferences: {
     // Array of dietary restriction tags (e.g., 'vegan', 'gluten-free')
     dietaryRestrictions: { type: [String], default: [] },
     // Array of preferred cuisine types (e.g., 'Italian', 'Mexican')
     cuisineTypes: { type: [String], default: [] },
-    cookingTime: Number,
+    cookingTime: String, // Accepts 'Hungry', 'Hangry', 'Patient', etc.
     servingSize: Number
   },
   chosenRecipes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Recipe' }], // List of selected recipes

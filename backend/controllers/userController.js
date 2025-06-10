@@ -84,4 +84,15 @@ exports.addSavedRecipe = async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+};
+
+exports.setChosenRecipes = async (req, res) => {
+  try {
+    const userId = req.user ? req.user._id : req.body.userId;
+    const { recipeIds } = req.body;
+    const user = await userService.setChosenRecipes(userId, recipeIds);
+    res.json({ message: 'Chosen recipes updated', chosenRecipes: user.chosenRecipes });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 }; 

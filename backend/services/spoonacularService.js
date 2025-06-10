@@ -107,7 +107,7 @@ async function seedRecipes() {
           text: step.step
         })) || [],
         tags: recipe.dishTypes || [],
-        cuisine: recipe.cuisines?.[0] || '',
+        cuisine: (recipe.cuisines?.[0] || '').toLowerCase(),
         cookingTime: recipe.readyInMinutes,
         servingSize: recipe.servings,
         nutrition: recipe.nutrition,
@@ -208,7 +208,7 @@ async function seedRandomRecipe() {
         text: step.step
       })) || [],
       tags: recipe.dishTypes || [],
-      cuisine: recipe.cuisines?.[0] || '',
+      cuisine: (recipe.cuisines?.[0] || '').toLowerCase(),
       cookingTime: recipe.readyInMinutes,
       servingSize: recipe.servings,
       nutrition: recipe.nutrition,
@@ -235,25 +235,36 @@ async function searchRecipes(preferences) {
     fillIngredients: true,
     instructionsRequired: true
   };
+
+  // Normalize preferences keys for backward compatibility
+  const cookTimeCategory = preferences.cookTimeCategory || preferences.cookingTime;
+
   if (preferences.cuisineTypes && preferences.cuisineTypes.length) {
     params.cuisine = preferences.cuisineTypes.join(',');
   }
   if (preferences.dietaryRestrictions && preferences.dietaryRestrictions.length) {
-    params.diet = preferences.dietaryRestrictions.join(',');
+    const allowedDiets = [
+      'gluten free', 'ketogenic', 'vegetarian', 'lacto-vegetarian', 'ovo-vegetarian', 'vegan',
+      'pescetarian', 'paleo', 'primal', 'low fodmap', 'whole30'
+    ];
+    const first = preferences.dietaryRestrictions[0].toLowerCase();
+    if (allowedDiets.includes(first)) {
+      params.diet = first;
+    }
   }
   // Cook time mapping
   let minCook = null;
-  if (preferences.cookTimeCategory === 'Hangry') {
+  if (cookTimeCategory === 'Hangry') {
     params.maxReadyTime = 20;
-  } else if (preferences.cookTimeCategory === 'Hungry') {
-    params.maxReadyTime = 40;
-    minCook = 21;
-  } else if (preferences.cookTimeCategory === 'Patient') {
+  } else if (cookTimeCategory === 'Hungry') {
+    params.maxReadyTime = 40; // no lower bound
+  } else if (cookTimeCategory === 'Patient') {
     minCook = 41;
   }
-  if (preferences.servingSize) {
-    params.servings = preferences.servingSize;
-  }
+  // Do NOT pass servings – Spoonacular expects an exact match and drastically reduces results.
+  // We'll filter locally to allow recipes that can be scaled down/up.
+
+  console.log('[SPOON] Fetching with params:', params);
 
   const response = await axiosWithRetry({
     method: 'get',
@@ -261,6 +272,7 @@ async function searchRecipes(preferences) {
     params
   });
   let results = response.data.results || [];
+  console.log(`[SPOON] Received ${results.length} results from API`);
   // Filter for lower bound if needed
   if (minCook !== null) {
     results = results.filter(r => r.readyInMinutes >= minCook);
@@ -290,7 +302,7 @@ async function searchRecipes(preferences) {
           ...(recipe.dairyFree ? ['dairy-free'] : []),
           ...(recipe.veryHealthy ? ['healthy'] : []),
         ],
-        cuisine: recipe.cuisines?.[0] || '',
+        cuisine: (recipe.cuisines?.[0] || '').toLowerCase(),
         cookingTime: recipe.readyInMinutes,
         servingSize: recipe.servings,
         nutrition: recipe.nutrition,
@@ -301,6 +313,7 @@ async function searchRecipes(preferences) {
       newRecipes.push(created);
     }
   }
+  console.log(`[SPOON] Inserted ${newRecipes.length} new recipes into DB`);
   return newRecipes;
 }
 

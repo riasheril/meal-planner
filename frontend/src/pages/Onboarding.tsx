@@ -115,7 +115,7 @@ const Onboarding = () => {
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-        navigate('/recipes', { state: { recipes: recipesJson } });
+        navigate('/recipes', { state: { recipes: recipesJson.recipes || [] } });
       } catch (error) {
         console.error('[ONBOARDING] Error during onboarding flow:', error);
         // For now, just navigate to recipes page even if the API call fails
