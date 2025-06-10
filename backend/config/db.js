@@ -18,9 +18,6 @@ const connectDB = async () => {
     }
 
     console.log('Attempting to connect to MongoDB...');
-    if (process.env.NODE_ENV !== 'production') {
-      console.log(`Mongo URI: ${uri}`);
-    }
     
     // Use DB_NAME env var if supplied (helps when the connection string omits the db segment)
     const dbNameOption = process.env.DB_NAME ? { dbName: process.env.DB_NAME } : {};

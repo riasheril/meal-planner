@@ -110,7 +110,8 @@ async function seedRecipes() {
         ingredients: recipe.extendedIngredients.map(ing => ({
           name: ing.name,
           quantity: ing.amount,
-          unit: ing.unit
+          unit: ing.unit,
+          aisle: normalizeAisle(ing.aisle) // normalize to our 7 categories
         })),
         instructions: recipe.analyzedInstructions[0]?.steps.map(step => ({
           step: step.number,
@@ -209,7 +210,8 @@ async function seedRandomRecipe() {
       ingredients: recipe.extendedIngredients.map(ing => ({
         name: ing.name,
         quantity: ing.amount,
-        unit: ing.unit
+        unit: ing.unit,
+        aisle: normalizeAisle(ing.aisle)
       })),
       instructions: recipe.analyzedInstructions[0]?.steps.map(step => ({
         step: step.number,
@@ -224,9 +226,7 @@ async function seedRandomRecipe() {
       sourceUrl: recipe.sourceUrl
     };
 
-    console.log('Attempting to insert random recipe...');
     const result = await Recipe.create(formattedRecipe);
-    console.log('Successfully inserted random recipe:', result.title);
     return result;
   } catch (error) {
     console.error('Error seeding random recipe:', error);
@@ -236,32 +236,33 @@ async function seedRandomRecipe() {
 
 // Search Spoonacular for recipes based on preferences and save new ones to DB
 async function searchRecipes(preferences) {
-  const params = {
-    apiKey: SPOONACULAR_API_KEY,
-    number: 10,
-    addRecipeInformation: true,
-    fillIngredients: true,
-    instructionsRequired: true
-  };
-  if (preferences.cuisineTypes && preferences.cuisineTypes.length) {
-    params.cuisine = preferences.cuisineTypes.join(',');
-  }
-  if (preferences.dietaryRestrictions && preferences.dietaryRestrictions.length) {
-    params.diet = preferences.dietaryRestrictions.join(',');
-  }
-  // Cook time mapping
-  let minCook = null;
-  if (preferences.cookTimeCategory === 'Hangry') {
-    params.maxReadyTime = 20;
-  } else if (preferences.cookTimeCategory === 'Hungry') {
-    params.maxReadyTime = 40;
-    minCook = 21;
-  } else if (preferences.cookTimeCategory === 'Patient') {
-    minCook = 41;
-  }
-  if (preferences.servingSize) {
-    params.servings = preferences.servingSize;
-  }
+  try {
+    const params = {
+      apiKey: SPOONACULAR_API_KEY,
+      number: 10,
+      addRecipeInformation: true,
+      fillIngredients: true,
+      instructionsRequired: true
+    };
+    if (preferences.cuisineTypes && preferences.cuisineTypes.length) {
+      params.cuisine = preferences.cuisineTypes.join(',');
+    }
+    if (preferences.dietaryRestrictions && preferences.dietaryRestrictions.length) {
+      params.diet = preferences.dietaryRestrictions.join(',');
+    }
+    // Cook time mapping
+    let minCook = null;
+    if (preferences.cookTimeCategory === 'Hangry') {
+      params.maxReadyTime = 20;
+    } else if (preferences.cookTimeCategory === 'Hungry') {
+      params.maxReadyTime = 40;
+      minCook = 21;
+    } else if (preferences.cookTimeCategory === 'Patient') {
+      minCook = 41;
+    }
+    if (preferences.servingSize) {
+      params.minServings = preferences.servingSize;
+    }
 
     const response = await axiosWithRetry({
       method: 'get',
@@ -270,18 +271,14 @@ async function searchRecipes(preferences) {
     });
 
     let results = response.data.results || [];
-    console.log('[SPOONACULAR] Number of results before filtering:', results.length);
-
+    
     // Filter for lower bound if needed
     if (preferences.cookTimeCategory === 'Hangry') {
       results = results.filter(r => r.readyInMinutes <= 20);
-      console.log('[SPOONACULAR] Number of results after cook time filtering:', results.length);
     } else if (preferences.cookTimeCategory === 'Hungry') {
       results = results.filter(r => r.readyInMinutes >= 21 && r.readyInMinutes <= 40);
-      console.log('[SPOONACULAR] Number of results after cook time filtering:', results.length);
     } else if (preferences.cookTimeCategory === 'Patient') {
       results = results.filter(r => r.readyInMinutes >= 41);
-      console.log('[SPOONACULAR] Number of results after cook time filtering:', results.length);
     }
 
     const newRecipes = [];
@@ -295,7 +292,7 @@ async function searchRecipes(preferences) {
             name: ing.name,
             quantity: ing.amount,
             unit: ing.unit,
-          aisle: normalizeAisle(ing.aisle) // normalize to our 7 categories
+            aisle: normalizeAisle(ing.aisle) // normalize to our 7 categories
           })) || [],
           instructions: recipe.analyzedInstructions?.[0]?.steps.map(step => ({
             step: step.number,
