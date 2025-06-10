@@ -7,13 +7,24 @@ const mongoose = require('mongoose');
 const SPOONACULAR_API_KEY = process.env.SPOONACULAR_API_KEY;
 const SPOONACULAR_BASE_URL = 'https://api.spoonacular.com/recipes';
 
+// Debug log to check API key
+// console.log('SPOONACULAR_API_KEY:', SPOONACULAR_API_KEY);
+
 // Helper: axios with retry on 429/quota-exceeded
 async function axiosWithRetry(config, maxRetries = 5, initialDelay = 1000) {
   let attempt = 0;
   let delay = initialDelay;
   while (true) {
     try {
-      return await axios(config);
+      // Ensure params are included in the request
+      const requestConfig = {
+        ...config,
+        params: {
+          ...config.params,
+          apiKey: SPOONACULAR_API_KEY
+        }
+      };
+      return await axios(requestConfig);
     } catch (error) {
       const status = error.response?.status;
       const quotaExceeded = error.response?.data?.message?.toLowerCase().includes('quota') || false;
@@ -70,7 +81,6 @@ async function seedRecipes() {
         method: 'get',
         url: `${SPOONACULAR_BASE_URL}/complexSearch`,
         params: {
-          apiKey: SPOONACULAR_API_KEY,
           number: batchSize,
           offset: offset,   
           // offset is the number of recipes to skip before starting to fetch and
@@ -157,7 +167,6 @@ async function fetchDetailedRecipes(recipeIds) {
       method: 'get',
       url: `${SPOONACULAR_BASE_URL}/informationBulk`,
       params: {
-        apiKey: SPOONACULAR_API_KEY,
         ids: recipeIds.join(',')
       }
     });
@@ -185,7 +194,6 @@ async function seedRandomRecipe() {
       method: 'get',
       url: `${SPOONACULAR_BASE_URL}/random`,
       params: {
-        apiKey: SPOONACULAR_API_KEY,
         number: 1,
         addRecipeInformation: true,
         fillIngredients: true,
@@ -227,79 +235,123 @@ async function seedRandomRecipe() {
 
 // Search Spoonacular for recipes based on preferences and save new ones to DB
 async function searchRecipes(preferences) {
-  const params = {
-    apiKey: SPOONACULAR_API_KEY,
-    number: 10,
-    addRecipeInformation: true,
-    fillIngredients: true,
-    instructionsRequired: true
-  };
-  if (preferences.cuisineTypes && preferences.cuisineTypes.length) {
-    params.cuisine = preferences.cuisineTypes.join(',');
-  }
-  if (preferences.dietaryRestrictions && preferences.dietaryRestrictions.length) {
-    params.diet = preferences.dietaryRestrictions.join(',');
-  }
-  // Cook time mapping
-  let minCook = null;
-  if (preferences.cookTimeCategory === 'Hangry') {
-    params.maxReadyTime = 20;
-  } else if (preferences.cookTimeCategory === 'Hungry') {
-    params.maxReadyTime = 40;
-    minCook = 21;
-  } else if (preferences.cookTimeCategory === 'Patient') {
-    minCook = 41;
-  }
-  if (preferences.servingSize) {
-    params.servings = preferences.servingSize;
-  }
+  try {
+    console.log('[SPOONACULAR] Starting recipe search with preferences:', preferences);
+    
+    // Construct parameters for Spoonacular API
+    const params = {
+      number: 48,
+      addRecipeInformation: true,
+      fillIngredients: true,
+      instructionsRequired: true,
+      minServings: preferences.servingSize  // Convert servingSize to minServings
+    };
 
-  const response = await axiosWithRetry({
-    method: 'get',
-    url: `${SPOONACULAR_BASE_URL}/complexSearch`,
-    params
-  });
-  let results = response.data.results || [];
-  // Filter for lower bound if needed
-  if (minCook !== null) {
-    results = results.filter(r => r.readyInMinutes >= minCook);
-  }
-  const newRecipes = [];
-  for (const recipe of results) {
-    const exists = await Recipe.findOne({ apiId: recipe.id });
-    if (!exists) {
-      const formatted = {
-        apiId: recipe.id,
-        title: recipe.title,
-        ingredients: recipe.extendedIngredients?.map(ing => ({
-          name: ing.name,
-          quantity: ing.amount,
-          unit: ing.unit
-        })) || [],
-        instructions: recipe.analyzedInstructions?.[0]?.steps.map(step => ({
-          step: step.number,
-          text: step.step
-        })) || [],
-        tags: [
-          ...(recipe.dishTypes || []),
-          ...(recipe.vegan ? ['vegan'] : []),
-          ...(recipe.vegetarian ? ['vegetarian'] : []),
-          ...(recipe.glutenFree ? ['gluten-free'] : []),
-          ...(recipe.dairyFree ? ['dairy-free'] : []),
-          ...(recipe.veryHealthy ? ['healthy'] : []),
-        ],
-        cuisine: recipe.cuisines?.[0] || '',
-        cookingTime: recipe.readyInMinutes,
-        servingSize: recipe.servings,
-        nutrition: recipe.nutrition,
-        image: recipe.image,
-        sourceUrl: recipe.sourceUrl
-      };
-      const created = await Recipe.create(formatted);
-      newRecipes.push(created);
+    // Add cuisine types if specified
+    if (preferences.cuisineTypes && preferences.cuisineTypes.length > 0) {
+      params.cuisine = preferences.cuisineTypes.join(',');
     }
+
+    // Add dietary restrictions if specified
+    if (preferences.dietaryRestrictions && preferences.dietaryRestrictions.length > 0) {
+      params.diet = preferences.dietaryRestrictions.join(',');
+    }
+
+    // Add cook time if specified (only for Hangry and Hungry)
+    if (preferences.cookTimeCategory === 'Hangry') {
+      params.maxReadyTime = 20;
+    } else if (preferences.cookTimeCategory === 'Hungry') {
+      params.maxReadyTime = 40;
+    }
+    // Patient has no max cook time, so no parameter is added
+
+    console.log('[SPOONACULAR] Request parameters:', params);
+    console.log('[SPOONACULAR] Request URL:', `${SPOONACULAR_BASE_URL}/complexSearch`);
+
+    const response = await axiosWithRetry({
+      method: 'get',
+      url: `${SPOONACULAR_BASE_URL}/complexSearch`,
+      params
+    });
+
+    console.log('[SPOONACULAR] Response status:', response.status);
+    console.log('[SPOONACULAR] Response headers:', response.headers);
+    console.log('[SPOONACULAR] Response data structure:', {
+      hasResults: !!response.data.results,
+      resultsLength: response.data.results?.length,
+      totalResults: response.data.totalResults,
+      offset: response.data.offset,
+      number: response.data.number
+    });
+
+    let results = response.data.results || [];
+    console.log('[SPOONACULAR] Number of results before filtering:', results.length);
+
+    // Filter for lower bound if needed
+    if (preferences.cookTimeCategory === 'Hangry') {
+      results = results.filter(r => r.readyInMinutes <= 20);
+      console.log('[SPOONACULAR] Number of results after cook time filtering:', results.length);
+    } else if (preferences.cookTimeCategory === 'Hungry') {
+      results = results.filter(r => r.readyInMinutes >= 21 && r.readyInMinutes <= 40);
+      console.log('[SPOONACULAR] Number of results after cook time filtering:', results.length);
+    } else if (preferences.cookTimeCategory === 'Patient') {
+      results = results.filter(r => r.readyInMinutes >= 41);
+      console.log('[SPOONACULAR] Number of results after cook time filtering:', results.length);
+    }
+
+    const newRecipes = [];
+    for (const recipe of results) {
+      const exists = await Recipe.findOne({ apiId: recipe.id });
+      if (!exists) {
+        const formatted = {
+          apiId: recipe.id,
+          title: recipe.title,
+          ingredients: recipe.extendedIngredients?.map(ing => ({
+            name: ing.name,
+            quantity: ing.amount,
+            unit: ing.unit
+          })) || [],
+          instructions: recipe.analyzedInstructions?.[0]?.steps.map(step => ({
+            step: step.number,
+            text: step.step
+          })) || [],
+          tags: [
+            ...(recipe.dishTypes || []),
+            ...(recipe.vegan ? ['vegan'] : []),
+            ...(recipe.vegetarian ? ['vegetarian'] : []),
+            ...(recipe.glutenFree ? ['gluten-free'] : []),
+            ...(recipe.dairyFree ? ['dairy-free'] : []),
+            ...(recipe.veryHealthy ? ['healthy'] : []),
+          ],
+          cuisine: recipe.cuisines?.[0] || '',
+          cookingTime: recipe.readyInMinutes,
+          servingSize: recipe.servings,
+          nutrition: recipe.nutrition,
+          image: recipe.image,
+          sourceUrl: recipe.sourceUrl
+        };
+        const created = await Recipe.create(formatted);
+        newRecipes.push(created);
+      }
+    }
+    console.log('[SPOONACULAR] Number of new recipes added to DB:', newRecipes.length);
+    return newRecipes;
+  } catch (error) {
+    console.error('[SPOONACULAR] Error details:', {
+      message: error.message,
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data,
+      headers: error.response?.headers,
+      config: {
+        url: error.config?.url,
+        method: error.config?.method,
+        params: error.config?.params,
+        headers: error.config?.headers
+      }
+    });
+    throw error;
   }
-  return newRecipes;
 }
 
 module.exports = {

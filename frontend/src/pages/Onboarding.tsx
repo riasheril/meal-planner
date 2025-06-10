@@ -102,9 +102,9 @@ const Onboarding = () => {
           },
           body: JSON.stringify({
             cuisineTypes: spoonacularCuisines,
-            dietaryRestrictions: preferences.dietaryRestrictions,
+            dietaryRestrictions: preferences.dietaryRestrictions.filter(d => d !== 'no-restrictions'),
             cookTimeCategory: preferences.cookingTime,
-            servingSize: preferences.servingSize
+            minServings: preferences.servingSize
           })
         });
 

@@ -23,10 +23,26 @@ const DietaryRestrictions = ({ selected, onUpdate }: DietaryRestrictionsProps) =
 
   const toggleSelection = (restriction: string) => {
     const restrictionFormatted = restriction.toLowerCase().replace(/\s+/g, '-');
+    
+    // Special handling for "No Restrictions"
+    if (restriction === "No Restrictions") {
+      if (selected.includes(restrictionFormatted)) {
+        // If "No Restrictions" is being deselected, just remove it
+        onUpdate(selected.filter(r => r !== restrictionFormatted));
+      } else {
+        // If "No Restrictions" is being selected, clear all other restrictions
+        onUpdate([restrictionFormatted]);
+      }
+      return;
+    }
+    
+    // For other restrictions
     if (selected.includes(restrictionFormatted)) {
-      onUpdate(selected.filter(r => r !== restrictionFormatted));
+      // Remove this restriction and "No Restrictions" if it exists
+      onUpdate(selected.filter(r => r !== restrictionFormatted && r !== 'no-restrictions'));
     } else {
-      onUpdate([...selected, restrictionFormatted]);
+      // Add this restriction and remove "No Restrictions" if it exists
+      onUpdate([...selected.filter(r => r !== 'no-restrictions'), restrictionFormatted]);
     }
   };
 
