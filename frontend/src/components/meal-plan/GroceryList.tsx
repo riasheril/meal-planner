@@ -23,12 +23,12 @@ const GroceryList = ({ groceryItems, onToggleItem }: GroceryListProps) => {
 
   const categoryConfig = {
     "Proteins": { emoji: "🥩" },
-    "Vegetables": { emoji: "🥬" },
     "Pantry": { emoji: "🏺" },
     "Dairy": { emoji: "🧀" },
     "Produce": { emoji: "🥬" },
-    "Meat/Fish": { emoji: "🥩" },
-    "Bakery": { emoji: "🍞" }
+    "Bakery": { emoji: "🍞" },
+    "Miscellaneous": { emoji: "🍽️" },
+    "Frozen": { emoji: "🥶" }
   };
 
   // Sort categories by number of items to optimize layout

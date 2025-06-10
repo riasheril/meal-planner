@@ -20,7 +20,8 @@ async function generateGroceryList(userId, recipeIds) {
           name: ing.name,
           quantity: qty,
           unit: normalizedUnit,
-          checked: false
+          checked: false,
+          aisle: ing.aisle
         };
       } else {
         ingredientMap[key].quantity += qty;

@@ -1,74 +1,98 @@
 import { Recipe, MealAssignment } from "@/types/meal-plan";
 
+// Define meal slots (easy to expand if needed)
+const MEALS_PER_DAY = ["breakfast", "lunch", "dinner"];
+const MAX_RECIPE_USAGE = 3;
+
+// Shuffle helper to randomize recipe order once
+const shuffleArray = <T>(array: T[]): T[] => {
+  const arr = [...array];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+};
+
 export const generateMealPlan = (selectedRecipes: Recipe[]): MealAssignment[] => {
   if (selectedRecipes.length === 0) return [];
 
   const numDays = Math.min(selectedRecipes.length, 7);
-  const breakfastRecipes = selectedRecipes.filter(r => r.tags.includes("breakfast"));
-  const lunchDinnerRecipes = selectedRecipes.filter(r => !r.tags.includes("breakfast"));
 
-  // Track how many times each recipe is used
+  // Track global recipe usage
   const recipeUsage: Record<string, number> = {};
   selectedRecipes.forEach(r => { recipeUsage[r._id] = 0; });
 
-  const getNextRecipe = (pool: Recipe[], fallbackPool: Recipe[]) => {
-    // Try to find a recipe in pool used < 3 times
-    let candidate = pool.find(r => recipeUsage[r._id] < 3);
-    if (candidate) return candidate;
-    // If none, try fallback pool
-    candidate = fallbackPool.find(r => recipeUsage[r._id] < 3);
-    if (candidate) return candidate;
-    // If still none, return null (shouldn't happen unless not enough recipes)
-    return null;
+  // Split recipes into pools
+  const breakfastRecipes = selectedRecipes.filter(r => r.tags.includes("breakfast"));
+  const otherRecipes = selectedRecipes.filter(r => !r.tags.includes("breakfast"));
+
+  // Shuffle pools to avoid fixed order bias
+  const shuffledBreakfastRecipes = shuffleArray(breakfastRecipes);
+  const shuffledOtherRecipes = shuffleArray(otherRecipes);
+
+  // Helper function to pick next recipe with proper fallback behavior
+  const getNextRecipe = (
+    mealType: string,
+    recipes: Recipe[],
+    fallbackRecipes: Recipe[],
+    usedToday: Set<string>
+  ): Recipe | null => {
+    // Step 1: Prefer unused recipe of preferred type (avoid repeats in day if possible)
+    const isValidStrict = (r: Recipe) =>
+      recipeUsage[r._id] < MAX_RECIPE_USAGE &&
+      !usedToday.has(r._id) &&
+      (mealType !== "breakfast" ? !r.tags.includes("breakfast") : true);
+
+    let pool = recipes.find(isValidStrict) || fallbackRecipes.find(isValidStrict);
+
+    // Step 2: If none found, allow repeat within day if needed, still respecting meal type
+    if (!pool) {
+      const isValidRelaxed = (r: Recipe) =>
+        recipeUsage[r._id] < MAX_RECIPE_USAGE &&
+        (mealType !== "breakfast" ? !r.tags.includes("breakfast") : true);
+
+      pool = recipes.find(isValidRelaxed) || fallbackRecipes.find(isValidRelaxed);
+    }
+
+    // Step 3: If still none, allow any recipe regardless of tag (last resort)
+    if (!pool) {
+      const isValidAny = (r: Recipe) =>
+        recipeUsage[r._id] < MAX_RECIPE_USAGE;
+
+      pool = recipes.find(isValidAny) || fallbackRecipes.find(isValidAny);
+    }
+
+    return pool || null;
   };
 
   const plan: MealAssignment[] = [];
+
+  // Build plan day by day
   for (let day = 0; day < numDays; day++) {
-    const dayName = `Day${day + 1}`;
-    let breakfast: Recipe | null = null;
-    let lunch: Recipe | null = null;
-    let dinner: Recipe | null = null;
+    const usedToday = new Set<string>(); // Track used recipes for this day
+    const meals: Record<string, Recipe> = {};
 
-    // 1. Breakfast slot
-    if (breakfastRecipes.length > 0) {
-      breakfast = getNextRecipe(breakfastRecipes, lunchDinnerRecipes);
-    } else {
-      breakfast = getNextRecipe(lunchDinnerRecipes, breakfastRecipes);
-    }
-    if (breakfast) recipeUsage[breakfast._id]++;
+    // Iterate over meal slots
+    MEALS_PER_DAY.forEach(mealType => {
+      const primaryPool = mealType === "breakfast" ? shuffledBreakfastRecipes : shuffledOtherRecipes;
+      const fallbackPool = mealType === "breakfast" ? shuffledOtherRecipes : shuffledBreakfastRecipes;
 
-    // 2. Lunch slot
-    if (lunchDinnerRecipes.length > 0) {
-      lunch = getNextRecipe(lunchDinnerRecipes, breakfastRecipes);
-    } else {
-      // fallback to breakfast recipes if no lunch/dinner
-      lunch = getNextRecipe(breakfastRecipes, lunchDinnerRecipes);
-    }
-    // Don't use a breakfast recipe for lunch if we have lunch/dinner recipes
-    if (lunch && lunch.tags.includes("breakfast") && lunchDinnerRecipes.length > 0) {
-      lunch = getNextRecipe(lunchDinnerRecipes, []);
-    }
-    if (lunch) recipeUsage[lunch._id]++;
+      const recipe = getNextRecipe(mealType, primaryPool, fallbackPool, usedToday);
 
-    // 3. Dinner slot
-    if (lunchDinnerRecipes.length > 0) {
-      dinner = getNextRecipe(lunchDinnerRecipes, breakfastRecipes);
-    } else {
-      dinner = getNextRecipe(breakfastRecipes, lunchDinnerRecipes);
-    }
-    if (dinner && dinner.tags.includes("breakfast") && lunchDinnerRecipes.length > 0) {
-      dinner = getNextRecipe(lunchDinnerRecipes, []);
-    }
-    if (dinner) recipeUsage[dinner._id]++;
+      if (recipe) {
+        recipeUsage[recipe._id]++;
+        usedToday.add(recipe._id);
+        meals[mealType] = recipe;
+      }
+    });
 
+    // Save day's meal assignment
     plan.push({
-      day: dayName,
-      meals: {
-        breakfast: breakfast!,
-        lunch: lunch!,
-        dinner: dinner!,
-      },
+      day: `Day${day + 1}`,
+      meals,
     });
   }
+
   return plan;
 };

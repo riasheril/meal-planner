@@ -3,6 +3,7 @@ const axios = require('axios');
 const Recipe = require('../models/Recipe');
 const GroceryList = require('../models/GroceryList');
 const mongoose = require('mongoose');
+const { normalizeAisle } = require('../utils/transformSpoonacular');
 
 const SPOONACULAR_API_KEY = process.env.SPOONACULAR_API_KEY;
 const SPOONACULAR_BASE_URL = 'https://api.spoonacular.com/recipes';
@@ -235,53 +236,37 @@ async function seedRandomRecipe() {
 
 // Search Spoonacular for recipes based on preferences and save new ones to DB
 async function searchRecipes(preferences) {
-  try {
-    console.log('[SPOONACULAR] Starting recipe search with preferences:', preferences);
-    
-    // Construct parameters for Spoonacular API
-    const params = {
-      number: 48,
-      addRecipeInformation: true,
-      fillIngredients: true,
-      instructionsRequired: true,
-      minServings: preferences.servingSize  // Convert servingSize to minServings
-    };
-
-    // Add cuisine types if specified
-    if (preferences.cuisineTypes && preferences.cuisineTypes.length > 0) {
-      params.cuisine = preferences.cuisineTypes.join(',');
-    }
-
-    // Add dietary restrictions if specified
-    if (preferences.dietaryRestrictions && preferences.dietaryRestrictions.length > 0) {
-      params.diet = preferences.dietaryRestrictions.join(',');
-    }
-
-    // Add cook time if specified (only for Hangry and Hungry)
-    if (preferences.cookTimeCategory === 'Hangry') {
-      params.maxReadyTime = 20;
-    } else if (preferences.cookTimeCategory === 'Hungry') {
-      params.maxReadyTime = 40;
-    }
-    // Patient has no max cook time, so no parameter is added
-
-    console.log('[SPOONACULAR] Request parameters:', params);
-    console.log('[SPOONACULAR] Request URL:', `${SPOONACULAR_BASE_URL}/complexSearch`);
+  const params = {
+    apiKey: SPOONACULAR_API_KEY,
+    number: 10,
+    addRecipeInformation: true,
+    fillIngredients: true,
+    instructionsRequired: true
+  };
+  if (preferences.cuisineTypes && preferences.cuisineTypes.length) {
+    params.cuisine = preferences.cuisineTypes.join(',');
+  }
+  if (preferences.dietaryRestrictions && preferences.dietaryRestrictions.length) {
+    params.diet = preferences.dietaryRestrictions.join(',');
+  }
+  // Cook time mapping
+  let minCook = null;
+  if (preferences.cookTimeCategory === 'Hangry') {
+    params.maxReadyTime = 20;
+  } else if (preferences.cookTimeCategory === 'Hungry') {
+    params.maxReadyTime = 40;
+    minCook = 21;
+  } else if (preferences.cookTimeCategory === 'Patient') {
+    minCook = 41;
+  }
+  if (preferences.servingSize) {
+    params.servings = preferences.servingSize;
+  }
 
     const response = await axiosWithRetry({
       method: 'get',
       url: `${SPOONACULAR_BASE_URL}/complexSearch`,
       params
-    });
-
-    console.log('[SPOONACULAR] Response status:', response.status);
-    console.log('[SPOONACULAR] Response headers:', response.headers);
-    console.log('[SPOONACULAR] Response data structure:', {
-      hasResults: !!response.data.results,
-      resultsLength: response.data.results?.length,
-      totalResults: response.data.totalResults,
-      offset: response.data.offset,
-      number: response.data.number
     });
 
     let results = response.data.results || [];
@@ -309,7 +294,8 @@ async function searchRecipes(preferences) {
           ingredients: recipe.extendedIngredients?.map(ing => ({
             name: ing.name,
             quantity: ing.amount,
-            unit: ing.unit
+            unit: ing.unit,
+          aisle: normalizeAisle(ing.aisle) // normalize to our 7 categories
           })) || [],
           instructions: recipe.analyzedInstructions?.[0]?.steps.map(step => ({
             step: step.number,

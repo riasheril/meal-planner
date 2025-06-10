@@ -16,7 +16,8 @@ const GroceryListSchema = new mongoose.Schema({
         'medium', 'large', 'bag', 'box', 't', 'c'
       ]
     },
-    checked: { type: Boolean, default: false }
+    checked: { type: Boolean, default: false },
+    aisle: { type: String, trim: true }
   }],
   relatedRecipes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Recipe' }],
   createdAt: { type: Date, default: Date.now }
