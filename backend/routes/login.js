@@ -10,7 +10,7 @@ const config = {
   authRequired: false,
   auth0Logout: true,
   secret: process.env.AUTH0_CLIENT_SECRET || 'dev-secret',
-  baseURL: 'https://meal-planner-n96f.onrender.com', //process.env.BASE_URL || 'https://meal-planner-n96f.onrender.com'//http://localhost:8080', 
+  baseURL: 'https://meal-planner-n96f.onrender.com', //process.env.BASE_URL || //http://localhost:8080', 
   clientID: process.env.AUTH0_CLIENT_ID || 'local-client',
   issuerBaseURL: process.env.AUTH0_ISSUER || 'https://example.com'
 };
