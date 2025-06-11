@@ -9,6 +9,7 @@ import SelectedRecipesSidebar from "@/components/recipes/SelectedRecipesSidebar"
 import CompletionModal from "@/components/recipes/CompletionModal";
 import { clearSelectedRecipes } from "@/utils/recipeStorage";
 import { Recipe } from "@/types/meal-plan"; // Use your shared type
+import { filterRecipes } from "@/utils/recipeFiltering";
 
 const Recipes = () => {
   const location = useLocation();
@@ -28,13 +29,13 @@ const Recipes = () => {
   const [loading, setLoading] = useState(true); // Loading state for API
 
   // Fetch recipes from backend API on mount
-  // --- NEW: Fetch from real backend ---
   useEffect(() => {
     const fetchRecipes = async () => {
       setLoading(true);
       try {
         const token = await getAccessTokenSilently();
         const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+        
         // 1. Fetch user preferences
         const prefRes = await fetch(`${API_URL}/api/users/preferences`, {
           headers: {
@@ -54,30 +55,43 @@ const Recipes = () => {
           body: JSON.stringify(preferences),
         });
         const data = await response.json();
-        const unique = Array.isArray(data.recipes)
-          ? data.recipes.filter((r: any, idx: number, arr: any[]) => arr.findIndex(x => x._id === r._id) === idx)
-          : [];
-        setAvailableRecipes(unique);
+        console.log("Raw API response:", data); // Debug log
+
+        if (!Array.isArray(data.recipes)) {
+          console.error("API did not return an array of recipes:", data);
+          setAvailableRecipes([]);
+          return;
+        }
+
+        const recipes = data.recipes;
+        console.log("Recipes before filtering:", recipes); // Debug log
+        
+        // Apply our filtering to remove sauces, marinades, and duplicates
+        const filteredRecipes = filterRecipes(recipes);
+        console.log("Recipes after filtering:", filteredRecipes); // Debug log
+        
+        setAvailableRecipes(filteredRecipes);
       } catch (error) {
-        // TODO: Handle error (show toast, etc.)
+        console.error("Error fetching recipes:", error);
         setAvailableRecipes([]);
       } finally {
         setLoading(false);
       }
     };
     fetchRecipes();
-  }, [location.state]); // Optionally, add dependencies
+  }, [location.state, getAccessTokenSilently]); // Added getAccessTokenSilently to dependencies
 
   // Ensure availableRecipes is always an array
-  // const safeAvailableRecipes = Array.isArray(availableRecipes) ? availableRecipes : [];
   const safeAvailableRecipes = Array.isArray(availableRecipes) ? availableRecipes : [];
 
   // Filter recipes based on meal type
-  const filteredRecipes = safeAvailableRecipes.filter(recipe => 
-    mealTypeFilter === "all" 
-      ? true 
-      : recipe.tags.includes(mealTypeFilter)
-  );
+  const filteredRecipes = safeAvailableRecipes.filter(recipe => {
+    if (!recipe || !recipe.tags) {
+      console.warn("Recipe missing tags:", recipe);
+      return false;
+    }
+    return mealTypeFilter === "all" ? true : recipe.tags.includes(mealTypeFilter);
+  });
 
   console.log("safeAvailableRecipes", safeAvailableRecipes);
   console.log("filteredRecipes", filteredRecipes);
@@ -182,21 +196,31 @@ const Recipes = () => {
               hasMoreRecipes={false}
             />
             
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {filteredRecipes.map(recipe => {
-                const isSelected = selectedRecipes.some(r => r._id === recipe._id);
-                const canSelect = selectedRecipes.length < 7 || isSelected;
-                return (
-                  <RecipeCard
-                    key={recipe._id}
-                    recipe={recipe}
-                    isSelected={isSelected}
-                    canSelect={canSelect}
-                    onToggle={toggleRecipe}
-                  />
-                );
-              })}
-            </div>
+            {loading ? (
+              <div className="text-center py-8">Loading recipes...</div>
+            ) : filteredRecipes.length === 0 ? (
+              <div className="text-center py-8">No recipes found</div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                {filteredRecipes.map(recipe => {
+                  if (!recipe || !recipe._id) {
+                    console.warn("Invalid recipe:", recipe);
+                    return null;
+                  }
+                  const isSelected = selectedRecipes.some(r => r._id === recipe._id);
+                  const canSelect = selectedRecipes.length < 7 || isSelected;
+                  return (
+                    <RecipeCard
+                      key={recipe._id}
+                      recipe={recipe}
+                      isSelected={isSelected}
+                      canSelect={canSelect}
+                      onToggle={toggleRecipe}
+                    />
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {/* Selected Recipes Sidebar */}
