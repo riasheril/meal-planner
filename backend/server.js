@@ -8,6 +8,7 @@ const groceryListRoutes = require('./routes/groceryList');
 const mealPlanRoutes = require('./routes/mealPlan');
 const { checkJwt } = require('./middleware/auth');
 const userController = require('./controllers/userController');
+const path = require('path');
 
 const app = express();
 app.use(cors());
@@ -32,6 +33,14 @@ app.post('/api/users/login', userController.login);
 
 // Protected user routes
 app.use('/api/users', checkJwt, userRoutes);
+
+// Serve static files from the React app
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Catch-all: send back React's index.html for any unknown route
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 
 // Error handling middleware
 app.use((err, req, res, next) => {
