@@ -17,6 +17,9 @@ const path = require('path');
 // MongoDB connection
 connectDB();
 
+// 1. Serve static files
+app.use(express.static(path.join(__dirname, 'public')));
+
 
 // Protected routes that require JWT
 app.use('/api/recipes', checkJwt, recipeRoutes);
