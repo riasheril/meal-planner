@@ -17,11 +17,6 @@ app.use(express.json());
 // MongoDB connection
 connectDB();
 
-// Root route
-app.get('/', (req, res) => {
-  res.send('Recipe App Backend is running!');
-});
-
 // Protected routes that require JWT
 app.use('/api/recipes', checkJwt, recipeRoutes);
 app.use('/api/grocery-lists', checkJwt, groceryListRoutes);
@@ -55,3 +50,8 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 }); 
+
+// Root route
+//app.get('/', (req, res) => {
+//  res.send('Recipe App Backend is running!');
+//});
