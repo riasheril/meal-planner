@@ -1,4 +1,5 @@
 require('dotenv').config();
+// This is a test comment to trigger CI
 const express = require('express');
 const cors = require('cors');
 const connectDB = require('./config/db');
