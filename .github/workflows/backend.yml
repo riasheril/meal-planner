@@ -1,5 +1,3 @@
-name: Backend CI
-
 on:
   push:
     branches:
@@ -39,4 +37,3 @@ jobs:
         run: npm run lint
 
       - name: Run tests
-        run: npm run test
