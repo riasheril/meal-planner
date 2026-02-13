@@ -1,7 +1,7 @@
 # meal-planner
 CMU capstone project: Automated meal planner and grocery list
 
-## Local / demo setup
+# Local / demo setup
 
 ## Set-up Instructions
 The env files with demo keys are committed as **examples**. One-time setup:
