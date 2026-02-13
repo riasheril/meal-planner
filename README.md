@@ -3,7 +3,8 @@ CMU capstone project: Automated meal planner and grocery list
 
 ## Local / demo setup
 
-So the app works on other people's machines for demos, env files with demo keys are committed as **examples**. One-time setup:
+## Set-up Instructions
+The env files with demo keys are committed as **examples**. One-time setup:
 
 1. **Backend**
    - `cp backend/.env.example backend/.env`
